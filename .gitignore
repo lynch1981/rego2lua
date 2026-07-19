@@ -1,0 +1,11 @@
+# Vim
+*~
+.*.swp
+.*.swo
+.*.swn
+*.swp
+*.swo
+*.un~
+Session.vim
+.netrwhist
+resume

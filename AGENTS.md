@@ -35,6 +35,11 @@ For each Rego source file, emit a Lua module that follows these rules:
 3. **Preserve semantics**  
    Defaults, rule bodies, and local bindings must match the Rego policy.
 
+4. **Rule name = function name**  
+   - Rego `package foo` → Lua module table `foo`  
+   - Rego rule `allow` → `function foo.allow(input)` returning the rule value  
+   - Do not invent extra API names (`eval`, `check`, …) for rules that do not exist in the Rego
+
 ### Example header
 
 Only the Rego appears as comments; the rest of the file is uncommented code:
@@ -52,24 +57,67 @@ Only the Rego appears as comments; the rest of the file is uncommented code:
 -- }
 
 local foo = {}
+
+function foo.allow(input)
+  -- ...
+  return allow
+end
+
+return foo
 ```
+
 
 ## Repo layout
 
 | Path | Role |
 |------|------|
-| `t/*.rego` | Sample Rego policies |
-| `t/*.lua` | Hand-translated (or later: compiler-emitted) Lua for those policies |
-| `t/test_simple_allow.lua` | Self-check under LuaJIT |
+| `t/*.rego` | Sample Rego policies (compiler input / golden sources) |
+| `t/*.lua` | Hand-translated Lua for those policies (expected output, for now) |
+| `t/test_*.lua` | Behavioral checks under LuaJIT |
 
-Run tests from the repo root:
+### First-step fixtures
+
+Start with small policies that exercise one idea each:
+
+| Files | What it covers |
+|-------|----------------|
+| `simple-allow.rego` + `.lua` | `default`, local `:=` binding, compare to string |
+| `simple-allow2.rego` + `.lua` | same decision via direct `input.field` compare |
+| `cmp_eq.rego` + `.lua` | `==` |
+| `cmp_ne.rego` + `.lua` | `!=` |
+| `cmp_gt.rego` + `.lua` | `>` |
+| `cmp_gte.rego` + `.lua` | `>=` |
+| `cmp_lt.rego` + `.lua` | `<` |
+| `cmp_lte.rego` + `.lua` | `<=` |
+
+`simple-allow*` should allow only when `input.method == "GET"`.  
+Each comparison op is its **own** golden pair so you can implement and test one operator at a time.
+
+Run one suite:
 
 ```bash
-luajit t/test_simple_allow.lua
+luajit t/test_cmp_eq.lua
 ```
+
+Run all suites:
+
+```bash
+luajit t/run_all.lua
+```
+
+
 
 ## When changing examples
 
 1. Edit the `.rego` file.
 2. Update the matching `.lua` translation (header Rego + body).
-3. Update / run `t/test_simple_allow.lua` with **`luajit`**.
+3. Update / run the matching `t/test_*.lua` with **`luajit`**.
+
+## Suggested next fixtures (later)
+
+Add new pairs only when the compiler needs a new language feature, for example:
+
+- multi-statement bodies
+- `not`
+- multiple rules for one name
+- nested `input` fields

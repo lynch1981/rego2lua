@@ -1,1 +1,1 @@
-luajit t/test_simple_allow.lua
+luajit t/run_all.lua

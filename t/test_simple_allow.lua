@@ -1,7 +1,5 @@
--- Run: luajit t/test_simple_allow.lua
-
-local allow2 = assert(loadfile("t/simple-allow2.lua"))()
-local allow1 = assert(loadfile("t/simple-allow.lua"))()
+-- First-step behavioral tests for hand-translated policies.
+-- Run from repo root: luajit t/test_simple_allow.lua
 
 local failures = 0
 
@@ -20,17 +18,31 @@ if type(jit) == "table" and jit.version then
   print(string.format("jit: %s", jit.version))
 end
 
-check("allow2 GET", allow2.allow({ method = "GET" }), true)
-check("allow2 POST", allow2.allow({ method = "POST" }), false)
-check("allow2 empty", allow2.allow({}), false)
-check("allow2 nil input", allow2.allow(nil), false)
-check("allow2 eval shape", allow2.eval({ method = "GET" }).allow, true)
+local policies = {
+  {
+    name = "simple-allow",
+    mod = assert(loadfile("t/simple-allow.lua"))(),
+  },
+  {
+    name = "simple-allow2",
+    mod = assert(loadfile("t/simple-allow2.lua"))(),
+  },
+}
 
-check("allow1 GET", allow1.allow({ method = "GET" }), true)
-check("allow1 POST", allow1.allow({ method = "POST" }), false)
-check("allow1 empty", allow1.allow({}), false)
-check("allow1 nil input", allow1.allow(nil), false)
-check("allow1 eval shape", allow1.eval({ method = "GET" }).allow, true)
+local inputs = {
+  { label = "GET",   input = { method = "GET" },  want = true },
+  { label = "POST",  input = { method = "POST" }, want = false },
+  { label = "empty", input = {},                  want = false },
+  { label = "nil",   input = nil,                 want = false },
+}
+
+for i = 1, #policies do
+  local p = policies[i]
+  for j = 1, #inputs do
+    local c = inputs[j]
+    check(p.name .. " " .. c.label, p.mod.allow(c.input), c.want)
+  end
+end
 
 if failures > 0 then
   os.exit(1)
