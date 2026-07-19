@@ -90,6 +90,8 @@ OpenResty-style `__DATA__` blocks. Each case has:
 
 Note: use `ref_lua` (underscore), not `ref-lua`. In Test::Base, text after a hyphen is a **filter** name (`--- ref-lua` would be section `ref` + filter `lua`).
 
+OpenResty-style spacing: leave **three blank lines** between `=== TEST` cases.
+
 ### What the harness checks
 
 1. If `./rego2lua` (or `$REGO2LUA`) is executable: compile `--- Rego` → Lua.
@@ -142,5 +144,8 @@ Order for `./go`: simple policy first, then one file per comparison op.
 
 | File | Covers |
 |------|--------|
-| `sanity.t` | `default` allow; direct field, implicit AND, `not`, local `:=` |
+| `sanity.t` | `default` allow; direct field, AND, `not`, local `:=` |
+| `scalars.t` | basic scalars: string, number, boolean, null |
+| `access.t` | object/array access: `.field`, `[i]`, nested |
+| `membership.t` | `"x" in arr` and `arr[_] == "x"` |
 | `cmp_eq.t` … `cmp_lte.t` | `==`, `!=`, `>`, `>=`, `<`, `<=` |

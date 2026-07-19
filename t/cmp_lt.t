@@ -44,6 +44,8 @@ return cmp
     "lt": true
 }
 
+
+
 === TEST 2: equal
 --- input
 {
@@ -80,6 +82,8 @@ return cmp
 {
     "lt": false
 }
+
+
 
 === TEST 3: greater
 --- input
@@ -118,6 +122,8 @@ return cmp
     "lt": false
 }
 
+
+
 === TEST 4: negative and zero
 --- input
 {
@@ -155,6 +161,8 @@ return cmp
     "lt": true
 }
 
+
+
 === TEST 5: strings (not numbers)
 --- input
 {
@@ -191,6 +199,8 @@ return cmp
 {
     "lt": false
 }
+
+
 
 === TEST 6: missing a
 --- input

@@ -44,6 +44,8 @@ return cmp
     "gte": true
 }
 
+
+
 === TEST 2: equal
 --- input
 {
@@ -80,6 +82,8 @@ return cmp
 {
     "gte": true
 }
+
+
 
 === TEST 3: less
 --- input
@@ -118,6 +122,8 @@ return cmp
     "gte": false
 }
 
+
+
 === TEST 4: strings (not numbers)
 --- input
 {
@@ -154,6 +160,8 @@ return cmp
 {
     "gte": false
 }
+
+
 
 === TEST 5: missing a
 --- input

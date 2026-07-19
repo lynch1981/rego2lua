@@ -44,6 +44,8 @@ return cmp
     "ne": false
 }
 
+
+
 === TEST 2: unequal numbers
 --- input
 {
@@ -80,6 +82,8 @@ return cmp
 {
     "ne": true
 }
+
+
 
 === TEST 3: equal strings
 --- input
@@ -118,6 +122,8 @@ return cmp
     "ne": false
 }
 
+
+
 === TEST 4: unequal strings
 --- input
 {
@@ -155,6 +161,8 @@ return cmp
     "ne": true
 }
 
+
+
 === TEST 5: missing a
 --- input
 {
@@ -190,6 +198,8 @@ return cmp
 {
     "ne": false
 }
+
+
 
 === TEST 6: empty input
 --- input

@@ -41,6 +41,8 @@ return foo
     "allow": true
 }
 
+
+
 === TEST 2: direct field - deny POST
 --- input
 {
@@ -75,6 +77,8 @@ return foo
     "allow": false
 }
 
+
+
 === TEST 3: direct field - deny empty input
 --- input
 {
@@ -107,6 +111,8 @@ return foo
 {
     "allow": false
 }
+
+
 
 === TEST 4: implicit AND - both expressions true
 --- input
@@ -144,6 +150,8 @@ return foo
     "allow": true
 }
 
+
+
 === TEST 5: implicit AND - first expression false
 --- input
 {
@@ -179,6 +187,8 @@ return foo
 {
     "allow": false
 }
+
+
 
 === TEST 6: implicit AND - second expression false
 --- input
@@ -216,6 +226,8 @@ return foo
     "allow": false
 }
 
+
+
 === TEST 7: not - expression false, not succeeds
 --- input
 {
@@ -250,6 +262,8 @@ return foo
     "allow": true
 }
 
+
+
 === TEST 8: not - expression true, not fails
 --- input
 {
@@ -283,6 +297,8 @@ return foo
 {
     "allow": false
 }
+
+
 
 === TEST 9: local binding - allow GET
 --- input
@@ -322,6 +338,8 @@ return foo
     "allow": true
 }
 
+
+
 === TEST 10: local binding - deny POST
 --- input
 {
@@ -359,6 +377,8 @@ return foo
 {
     "allow": false
 }
+
+
 
 === TEST 11: local binding - deny empty input
 --- input
