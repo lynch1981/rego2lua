@@ -142,5 +142,5 @@ Order for `./go`: simple policy first, then one file per comparison op.
 
 | File | Covers |
 |------|--------|
-| `sanity.t` | `default` allow; direct `input.field` first, then local `:=` |
+| `sanity.t` | `default` allow; direct field, implicit AND, `not`, local `:=` |
 | `cmp_eq.t` … `cmp_lte.t` | `==`, `!=`, `>`, `>=`, `<`, `<=` |
