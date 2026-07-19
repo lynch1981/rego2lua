@@ -1,0 +1,121 @@
+# vi:set ft=perl:
+
+use lib '.';
+use t::Rego 'no_plan';
+
+run_tests;
+
+__DATA__
+
+=== TEST 1: allow GET
+--- input
+{
+    "method": "GET"
+}
+--- data
+{
+}
+--- Rego
+package foo
+
+default allow := false
+
+allow if {
+    method := input.method
+    method == "GET"
+}
+--- ref_lua
+local foo = {}
+
+function foo.allow(input)
+  input = input or {}
+  local allow = false
+  do
+    local method = input.method
+    if method == "GET" then
+      allow = true
+    end
+  end
+  return allow
+end
+
+return foo
+--- out
+{
+    "allow": true
+}
+
+=== TEST 2: deny POST
+--- input
+{
+    "method": "POST"
+}
+--- data
+{
+}
+--- Rego
+package foo
+
+default allow := false
+
+allow if {
+    method := input.method
+    method == "GET"
+}
+--- ref_lua
+local foo = {}
+
+function foo.allow(input)
+  input = input or {}
+  local allow = false
+  do
+    local method = input.method
+    if method == "GET" then
+      allow = true
+    end
+  end
+  return allow
+end
+
+return foo
+--- out
+{
+    "allow": false
+}
+
+=== TEST 3: deny empty input
+--- input
+{
+}
+--- data
+{
+}
+--- Rego
+package foo
+
+default allow := false
+
+allow if {
+    method := input.method
+    method == "GET"
+}
+--- ref_lua
+local foo = {}
+
+function foo.allow(input)
+  input = input or {}
+  local allow = false
+  do
+    local method = input.method
+    if method == "GET" then
+      allow = true
+    end
+  end
+  return allow
+end
+
+return foo
+--- out
+{
+    "allow": false
+}

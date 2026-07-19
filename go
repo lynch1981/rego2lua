@@ -1,1 +1,1 @@
-luajit t/run_all.lua
+prove t/*.t

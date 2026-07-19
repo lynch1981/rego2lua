@@ -71,53 +71,75 @@ return foo
 
 | Path | Role |
 |------|------|
-| `t/*.rego` | Sample Rego policies (compiler input / golden sources) |
-| `t/*.lua` | Hand-translated Lua for those policies (expected output, for now) |
-| `t/test_*.lua` | Behavioral checks under LuaJIT |
+| `t/*.t` | Regression tests (Test::Base / `t::Rego`) |
+| `t/Rego.pm` | Test harness: compile (or use ref Lua) → eval → compare `--- out` |
+| `t/eval_pkg.lua` | LuaJIT helper: load module, call each rule, print JSON result |
 
-### First-step fixtures
+## Primary test format (`t/*.t`)
 
-Start with small policies that exercise one idea each:
+OpenResty-style `__DATA__` blocks. Each case has:
 
-| Files | What it covers |
-|-------|----------------|
-| `simple-allow.rego` + `.lua` | `default`, local `:=` binding, compare to string |
-| `simple-allow2.rego` + `.lua` | same decision via direct `input.field` compare |
-| `cmp_eq.rego` + `.lua` | `==` |
-| `cmp_ne.rego` + `.lua` | `!=` |
-| `cmp_gt.rego` + `.lua` | `>` |
-| `cmp_gte.rego` + `.lua` | `>=` |
-| `cmp_lt.rego` + `.lua` | `<` |
-| `cmp_lte.rego` + `.lua` | `<=` |
+| Section | Meaning |
+|---------|---------|
+| `--- input` | JSON **input** document for the policy |
+| `--- data` | JSON **data** document (may be `{}`) |
+| `--- Rego` | Rego policy source (compiler input) |
+| `--- ref_lua` | Reference Lua translation (bootstrap until `rego2lua` exists) |
+| `--- out` | Expected evaluation result (JSON object of rule → value) |
+| `--- ONLY` | Test::Base: run only this block; harness prints Lua under test |
 
-`simple-allow*` should allow only when `input.method == "GET"`.  
-Each comparison op is its **own** golden pair so you can implement and test one operator at a time.
+Note: use `ref_lua` (underscore), not `ref-lua`. In Test::Base, text after a hyphen is a **filter** name (`--- ref-lua` would be section `ref` + filter `lua`).
 
-Run one suite:
+### What the harness checks
 
-```bash
-luajit t/test_cmp_eq.lua
+1. If `./rego2lua` (or `$REGO2LUA`) is executable: compile `--- Rego` → Lua.
+2. Else: use `--- ref_lua` as the module under test (bootstrap mode).
+3. Load the module with **LuaJIT**, call each exported rule function with `(input, data)`.
+4. Require the JSON result to match `--- out` deeply.
+
+Goal: **behavior of generated Lua equals `--- out`**, not string-identity with `--- ref_lua` (the ref is a guide and a bootstrap fallback).
+
+### Example (from `t/cmp_eq.t`)
+
+```
+=== TEST 1: simple eq (unequal numbers)
+--- input
+{ "a": 10, "b": 11 }
+--- data
+{}
+--- Rego
+package cmp
+default eq := false
+eq if { input.a == input.b }
+--- ref_lua
+... reference module with cmp.eq ...
+--- out
+{ "eq": false }
 ```
 
-Run all suites:
+### Run
 
 ```bash
-luajit t/run_all.lua
+# one file
+prove t/cmp_eq.t
+
+# all .t tests
+prove t/*.t
 ```
 
+Needs: `luajit`, `lua-cjson`, Perl `Test::Base` (`libtest-base-perl`), `JSON::PP` (core).
 
+## Generated Lua API (for `--- ref_lua` / compiler output)
 
-## When changing examples
+- `package foo` → module table `foo`
+- rule `eq` → `function foo.eq(input, data)` returning the rule value  
+  (`data` may be ignored when unused)
+- Header comments = full Rego source; no other body comments
 
-1. Edit the `.rego` file.
-2. Update the matching `.lua` translation (header Rego + body).
-3. Update / run the matching `t/test_*.lua` with **`luajit`**.
+## Current `.t` suites
 
-## Suggested next fixtures (later)
-
-Add new pairs only when the compiler needs a new language feature, for example:
-
-- multi-statement bodies
-- `not`
-- multiple rules for one name
-- nested `input` fields
+| File | Covers |
+|------|--------|
+| `simple-allow.t` | `default`, local `:=` binding |
+| `simple-allow2.t` | direct `input.field` compare |
+| `cmp_eq.t` … `cmp_lte.t` | comparison operators one op each |
