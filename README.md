@@ -90,11 +90,11 @@ return cmp
 ### Run tests
 
 ```bash
-# one file
-prove t/cmp_eq.t
+# one file (start here)
+prove t/sanity.t
 
-# all .t tests
-prove t/*.t
+# all suites, simple first
+./go
 ```
 
 Requirements:

@@ -121,10 +121,10 @@ eq if { input.a == input.b }
 
 ```bash
 # one file
-prove t/cmp_eq.t
+prove t/sanity.t
 
-# all .t tests
-prove t/*.t
+# all suites (simple first — or use ./go)
+./go
 ```
 
 Needs: `luajit`, `lua-cjson`, Perl `Test::Base` (`libtest-base-perl`), `JSON::PP` (core).
@@ -138,8 +138,9 @@ Needs: `luajit`, `lua-cjson`, Perl `Test::Base` (`libtest-base-perl`), `JSON::PP
 
 ## Current `.t` suites
 
+Order for `./go`: simple policy first, then one file per comparison op.
+
 | File | Covers |
 |------|--------|
-| `simple-allow.t` | `default`, local `:=` binding |
-| `simple-allow2.t` | direct `input.field` compare |
-| `cmp_eq.t` … `cmp_lte.t` | comparison operators one op each |
+| `sanity.t` | `default` allow; direct `input.field` first, then local `:=` |
+| `cmp_eq.t` … `cmp_lte.t` | `==`, `!=`, `>`, `>=`, `<`, `<=` |
