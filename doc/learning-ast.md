@@ -144,21 +144,6 @@ AstNode* make_assign(const char* name, AstNode* value) {
     node->as.assign.value = value;
     return node;
 }
-
-/**
- * @brief Ensures the current token matches the expected type and consumes it.
- *
- * The next token must be := (type).
- * If it is, consume it and continue.
- * If it is not, then report a syntax error
- */
-void expect(TokenType type) {
-    if (current() == type) {
-        consume();          // move to the next token
-    } else {
-        error("Expected token, but got something else");
-    }
-}
 ```
 
 **Usage example:**
@@ -225,6 +210,21 @@ Assign
 ---
 
 ## 7. How the Parser Builds the AST
+
+### Parser helper: `expect`
+
+The parser walks a **token stream** from the lexer (see `learning-tokenize.md`). A common helper asserts the next token kind and advances:
+
+```c
+/* Require current token to be `type`, then consume it; otherwise syntax error. */
+void expect(TokenType type) {
+    if (current() == type) {
+        consume();
+    } else {
+        error("unexpected token");
+    }
+}
+```
 
 We use **Recursive Descent Parsing** with layered functions to handle operator precedence.
 
@@ -379,4 +379,3 @@ You now understand:
 1. Practice drawing more ASTs by hand
 2. Implement the basic expression AST + parser in C/C++
 3. Return to the Rego AST design and start implementing it
-```

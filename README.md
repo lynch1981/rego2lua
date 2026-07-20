@@ -2,6 +2,15 @@
 
 Source-to-source compiler: **Rego** (OPA policy language) → **Lua** for **LuaJIT 2.1** / OpenResty.
 
+## Learning notes
+
+Compiler study notes live under `doc/`:
+
+| Doc | Topic |
+|-----|--------|
+| [`doc/learning-tokenize.md`](doc/learning-tokenize.md) | Rego lexer / tokens (v0.1 subset) |
+| [`doc/learning-ast.md`](doc/learning-ast.md) | AST + recursive-descent parsing |
+
 ## Test cases (`t/*.t`)
 
 Regression tests use OpenResty-style Perl `Test::Base` files. Each file ends with a `__DATA__` section made of one or more cases:

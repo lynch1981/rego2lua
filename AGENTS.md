@@ -11,6 +11,8 @@ Build a simple **source-to-source compiler** called **`rego2lua`**.
 
 Keep the compiler small and correct. Prefer a working subset over a full OPA clone until the scope is explicitly expanded.
 
+Learning notes (lexer / AST): `doc/learning-tokenize.md`, `doc/learning-ast.md`.
+
 ## Target runtime
 
 Generated Lua must run on **LuaJIT 2.1** — the same engine OpenResty uses (Lua **5.1** language level, plus LuaJIT extensions).
