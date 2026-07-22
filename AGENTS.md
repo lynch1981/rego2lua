@@ -39,6 +39,29 @@ Generated Lua must run on **LuaJIT 2.1** (OpenResty; Lua **5.1** language level 
 | Write Lua 5.1 / LuaJIT 2.1 code | Use Lua 5.2+ / 5.3 / 5.4-only features |
 | Test with `luajit` | Rely on `lua` / `lua5.4` as the primary check |
 
+## Git commits
+
+Every commit message **must** start with one of these prefixes (lowercase, with colon and space):
+
+| Prefix | Use when |
+|--------|----------|
+| `doc:` | Documentation only (`README`, `AGENTS.md`, `doc/*`, comments that do not change behavior) |
+| `bugfix:` | Fix incorrect behavior or a failing test that already covered the intent |
+| `feature:` | New product capability (translator, runtime, module API, CLI, …) |
+| `tests:` | Test harness, fixtures, suites (`t/*`, `go`, eval helpers) with no production behavior change |
+
+Rules:
+
+1. **One prefix per commit** — pick the primary intent; split mixed work into separate commits when practical.
+2. **Subject is clear** — short imperative summary after the prefix; say *what* changed, not “update stuff”.
+3. **Examples**
+   - `doc: add Rego builtins reference`
+   - `tests: cover implicit AND and not in sanity.t`
+   - `feature: emit Lua for CallStmt equality builtins`
+   - `bugfix: treat undefined path access as undefined, not nil`
+
+Do **not** rewrite existing history to retrofit this style unless the user explicitly asks.
+
 ## What agents should implement
 
 1. Obtain IR: `opa build -t plan -e <entrypoint> <policy.rego>` → `plan.json`.
