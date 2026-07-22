@@ -4,150 +4,133 @@ Guidance for humans and coding agents working in this repo.
 
 ## Goal
 
-Build a simple **source-to-source compiler** called **`rego2lua`**.
+Build **`rego2lua`**: turn Rego policies into **Lua** that makes the **same decisions**.
 
-- **Input:** Rego policy (OPA policy language)
-- **Output:** Lua that implements the same decisions
+**Target product is unchanged:** Lua modules for **LuaJIT 2.1 / OpenResty**.
 
-Keep the compiler small and correct. Prefer a working subset over a full OPA clone until the scope is explicitly expanded.
+**Implementation path is short:** we do **not** implement a full Rego frontend in this repo. We start from **OPA’s official plan IR (JSON)** and focus on **IR → Lua**.
 
-Learning notes (lexer / AST): `doc/learning-tokenize.md`, `doc/learning-ast.md`.
+```text
+Rego source  ──►  OPA (`opa build -t plan`)  ──►  plan.json (IR)  ──►  rego2lua  ──►  Lua
+                     (existing tool)                  (our work)
+```
+
+| Stage | Who | Notes |
+|-------|-----|--------|
+| Rego → IR | **OPA** | Lex, parse, compile to plan IR |
+| IR → Lua | **This project** | Walk IR, emit Lua + small runtime helpers |
+| Run / test | **LuaJIT** + `t/*.t` | Behavior must match `--- out` |
+
+Keep the translator small and correct. Prefer a working subset of IR/statement types over full OPA feature coverage until the scope is expanded.
+
+Primary design doc: **`doc/IR_to_Lua_Guide.md`**.
+
+Optional background only (not the production pipeline):
+
+- `doc/learning-tokenize.md` — Rego lexer (learning)
+- `doc/learning-ast.md` — AST / recursive descent (learning)
 
 ## Target runtime
 
-Generated Lua must run on **LuaJIT 2.1** — the same engine OpenResty uses (Lua **5.1** language level, plus LuaJIT extensions).
+Generated Lua must run on **LuaJIT 2.1** (OpenResty; Lua **5.1** language level + LuaJIT extensions).
 
 | Do | Don't |
 |----|--------|
 | Write Lua 5.1 / LuaJIT 2.1 code | Use Lua 5.2+ / 5.3 / 5.4-only features |
 | Test with `luajit` | Rely on `lua` / `lua5.4` as the primary check |
 
-## Generated Lua file shape
+## What agents should implement
 
-For each Rego source file, emit a Lua module that follows these rules:
+1. Obtain IR: `opa build -t plan -e <entrypoint> <policy.rego>` → `plan.json`.
+2. Translate IR → Lua (Python is the intended backend language; see the IR guide).
+3. Ship a small **Lua runtime** for Rego semantics Lua tables lack (undefined, sets, `not`, scan, …).
+4. Expose a stable **module API** (below) so tests and OpenResty callers look the same.
+5. Grow statement coverage in lockstep with `t/*.t` (start with `sanity.t`).
 
-1. **Header = the Rego source**  
-   Put the full Rego text at the top of the `.lua` file as line comments (`-- ...`).  
-   A single first line naming the source file is fine, for example:
-   `-- simple-allow.rego`
+Do **not** spend effort re-building OPA’s lexer/parser unless the project explicitly pivots.
 
-2. **No other comments**  
-   Do not add EmmyLua annotations, restated rule comments in the body, or other explanatory comments outside that header.
+## Generated Lua module shape
 
-3. **Preserve semantics**  
-   Defaults, rule bodies, and local bindings must match the Rego policy.
+Output must satisfy:
 
-4. **Rule name = function name**  
-   - Rego `package foo` → Lua module table `foo`  
-   - Rego rule `allow` → `function foo.allow(input)` returning the rule value  
-   - Do not invent extra API names (`eval`, `check`, …) for rules that do not exist in the Rego
+1. **Optional header** — original Rego as `--` line comments is fine (and useful for debugging).
+2. **No other comments** in the body (no EmmyLua, no restated IR notes).
+3. **Same decisions** as Rego for the given `input` / `data`.
+4. **Rule name = function name**
+   - `package foo` → module table `foo`
+   - rule `allow` → `function foo.allow(input, data)` returning the rule value
+   - Do not invent APIs (`eval`, `check`, …) that are not Rego rules
 
-### Example header
-
-Only the Rego appears as comments; the rest of the file is uncommented code:
+### Example shape
 
 ```lua
--- simple-allow.rego
---
 -- package foo
---
 -- default allow := false
---
--- allow if {
---     method := input.method
---     method == "GET"
--- }
+-- allow if { input.method == "GET" }
 
 local foo = {}
 
-function foo.allow(input)
-  -- ...
+function foo.allow(input, data)
+  -- generated from IR (or bootstrap ref)
   return allow
 end
 
 return foo
 ```
 
-
 ## Repo layout
 
 | Path | Role |
 |------|------|
-| `t/*.t` | Regression tests (Test::Base / `t::Rego`) |
-| `t/Rego.pm` | Test harness: compile (or use ref Lua) → eval → compare `--- out` |
-| `t/eval_pkg.lua` | LuaJIT helper: load module, call each rule, print JSON result |
+| `doc/IR_to_Lua_Guide.md` | **Main** implementation plan (IR → Lua) |
+| `doc/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
+| `t/*.t` | Behavioral regression tests |
+| `t/Rego.pm` | Harness: get Lua → run under LuaJIT → compare `--- out` |
+| `t/eval_pkg.lua` | Call each exported rule; print JSON (`lua-cjson`) |
+| `opa/` | Local OPA plan examples / helpers (if present) |
 
-## Primary test format (`t/*.t`)
+## Tests (`t/*.t`)
 
-OpenResty-style `__DATA__` blocks. Each case has:
+OpenResty-style `Test::Base` files. Success = **Lua behavior matches `--- out`**, not that source equals `--- ref_lua`.
 
 | Section | Meaning |
 |---------|---------|
-| `--- input` | JSON **input** document for the policy |
-| `--- data` | JSON **data** document (may be `{}`) |
-| `--- Rego` | Rego policy source (compiler input) |
-| `--- ref_lua` | Reference Lua translation (bootstrap until `rego2lua` exists) |
-| `--- out` | Expected evaluation result (JSON object of rule → value) |
-| `--- ONLY` | Test::Base: run only this block; harness prints Lua under test |
+| `input` | JSON OPA/Rego **input** |
+| `data` | JSON OPA/Rego **data** (often `{}`) |
+| `Rego` | Policy source (OPA produces IR from this; human-readable fixture) |
+| `ref_lua` | Hand reference Lua — **bootstrap** until IR→Lua works |
+| `out` | Expected `{ rule_name: value, ... }` |
+| `ONLY` | Test::Base: run only this block; harness prints Lua under test |
 
-Note: use `ref_lua` (underscore), not `ref-lua`. In Test::Base, text after a hyphen is a **filter** name (`--- ref-lua` would be section `ref` + filter `lua`).
+Notes:
 
-OpenResty-style spacing: leave **three blank lines** between `=== TEST` cases.
+- Section name is `ref_lua` (underscore). `ref-lua` is wrong (Test::Base treats `-` as a filter).
+- Leave **three blank lines** between `=== TEST` cases (OpenResty style).
 
-### What the harness checks
+### What the harness does today
 
-1. If `./rego2lua` (or `$REGO2LUA`) is executable: compile `--- Rego` → Lua.
-2. Else: use `--- ref_lua` as the module under test (bootstrap mode).
-3. Load the module with **LuaJIT**, call each exported rule function with `(input, data)`.
-4. Require the JSON result to match `--- out` deeply.
-
-Goal: **behavior of generated Lua equals `--- out`**, not string-identity with `--- ref_lua` (the ref is a guide and a bootstrap fallback).
-
-### Example (from `t/cmp_eq.t`)
-
-```
-=== TEST 1: simple eq (unequal numbers)
---- input
-{ "a": 10, "b": 11 }
---- data
-{}
---- Rego
-package cmp
-default eq := false
-eq if { input.a == input.b }
---- ref_lua
-... reference module with cmp.eq ...
---- out
-{ "eq": false }
-```
+1. If `./rego2lua` (or `$REGO2LUA`) exists: produce Lua from the policy (intended: Rego→OPA IR→Lua).
+2. Else: use `--- ref_lua` (bootstrap).
+3. Run under **LuaJIT** via `t/eval_pkg.lua` with `input` / `data`.
+4. Deep-compare result to `--- out`.
 
 ### Run
 
 ```bash
-# one file
-prove t/sanity.t
-
-# all suites (simple first — or use ./go)
-./go
+prove t/sanity.t    # start here
+./go                # full suite, simple first
 ```
 
-Needs: `luajit`, `lua-cjson`, Perl `Test::Base` (`libtest-base-perl`), `JSON::PP` (core).
+Needs: `luajit`, `lua-cjson`, `opa` (for IR generation), Perl `Test::Base` (`libtest-base-perl`), `JSON::PP`.
 
-## Generated Lua API (for `--- ref_lua` / compiler output)
-
-- `package foo` → module table `foo`
-- rule `eq` → `function foo.eq(input, data)` returning the rule value  
-  (`data` may be ignored when unused)
-- Header comments = full Rego source; no other body comments
-
-## Current `.t` suites
-
-Order for `./go`: simple policy first, then one file per comparison op.
+### Suites (`./go` order)
 
 | File | Covers |
 |------|--------|
-| `sanity.t` | `default` allow; direct field, AND, `not`, local `:=` |
-| `scalars.t` | basic scalars: string, number, boolean, null |
-| `access.t` | object/array access: `.field`, `[i]`, nested |
-| `membership.t` | `"x" in arr` and `arr[_] == "x"` |
-| `cmp_eq.t` … `cmp_lte.t` | `==`, `!=`, `>`, `>=`, `<`, `<=` |
+| `sanity.t` | `default`, field compare, AND, `not`, local `:=` |
+| `scalars.t` | string, number, boolean, null |
+| `access.t` | object `.`, array `[i]`, nested |
+| `membership.t` | `"x" in arr`, `arr[_] == "x"` |
+| `cmp_*.t` | `==` `!=` `>` `>=` `<` `<=` |
+
+Implement IR statement support in roughly this order so tests unlock early (details in `doc/IR_to_Lua_Guide.md`).

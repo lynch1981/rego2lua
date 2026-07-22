@@ -8,8 +8,9 @@ Compiler study notes live under `doc/`:
 
 | Doc | Topic |
 |-----|--------|
-| [`doc/learning-tokenize.md`](doc/learning-tokenize.md) | Rego lexer / tokens (v0.1 subset) |
-| [`doc/learning-ast.md`](doc/learning-ast.md) | AST + recursive-descent parsing |
+| [`doc/IR_to_Lua_Guide.md`](doc/IR_to_Lua_Guide.md) | **Backend plan:** OPA IR (JSON) → Lua |
+| [`doc/learning-tokenize.md`](doc/learning-tokenize.md) | Rego lexer / tokens (learning) |
+| [`doc/learning-ast.md`](doc/learning-ast.md) | AST + recursive-descent parsing (learning) |
 
 ## Test cases (`t/*.t`)
 
