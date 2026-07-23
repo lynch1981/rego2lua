@@ -32,6 +32,20 @@ Target runtime: **LuaJIT 2.1** (same language level as OpenResty). Generated mod
 ## 2. Pipeline in this repo
 
 ```text
+Rego  --opa build -t plan-->  plan.json (IR)
+                                    │
+                                    │  codegen (no IR interpreter at runtime)
+                                    ▼
+                              Lua source/module
+                                    │
+                                    │  LuaJIT + small runtime (builtins, undef, sets, …)
+                                    ▼
+                              rule value  e.g. true / false
+```
+
+Repo harness view:
+
+```text
                     ┌─────────────────────────────────────┐
   example.rego      │  opa build -t plan -e <entry> ...   │
   ─────────────►    │  → plan.json (+ optional bundle)    │
@@ -75,32 +89,56 @@ Official docs and Go types:
 
 ## 3. IR shape (what you will walk)
 
+OPA’s **plan IR** is a low-level, imperative representation of Rego. It is meant for evaluators and backends that do not run Rego directly (custom runtimes, Wasm-style pipelines, or further codegen). You edit Rego; `plan.json` is machine output, not hand-written policy.
+
 Root object is a **Policy** with three top-level keys:
 
 | Key | Role |
 |-----|------|
-| `static` | String constants, builtin declarations, debug filenames |
-| `plans` | Named entrypoints (evaluation paths) |
-| `funcs` | Supporting functions called from plans / other funcs |
+| `static` | Constant pool: strings, builtin decls, source file names |
+| `plans` | Named entrypoint programs (queries) |
+| `funcs` | Compiled rule/function bodies called by plans |
 
-### Static
+### `static`
 
-- `strings[]` — string constants; statements refer by **index** (`string_index`).
-- `builtin_funcs[]` — builtins the runtime must provide (name + type decl).
-- `files[]` — source names for debug only.
+- **`strings[]`** — string constants; statements refer by **index** (`string_index`). Example: `0 → "result"`, `1 → "user"`, `2 → "alice"`.
+- **`builtin_funcs[]`** — builtins the runtime must provide (name + type decl), e.g. `lower`.
+- **`files[]`** — source map for debug only (`0 → allow.rego`); stmts carry `file` / `row` / `col`.
 
-### Plans
+### `plans` (entrypoints)
 
-Each plan:
+```text
+plans
+└── plans[]
+    └── Plan
+        ├── name      # e.g. "example/allow"
+        └── blocks[]
+            └── stmts[]
+```
 
-- `name` — entrypoint id (e.g. `example/allow`).
-- `blocks[]` — ordered blocks of statements.
+One plan per `-e` entrypoint. Multiple entrypoints → multiple named plans.
 
-Locals **0** and **1** are conventionally **`input`** and **`data`**.
+#### Execution model
 
-Successful paths often end with `ResultSetAddStmt` (query result set). For our product API we still want a **stable Lua surface** like `module.allow(input, data) → value`, not necessarily OPA’s full result-set object—map IR results into that shape in the codegen layer.
+1. **Locals 0 and 1** are pre-bound: `0 = input`, `1 = data`.
+2. **Blocks** run in order; **statements** in a block run in order.
+3. If a statement is **undefined**, the rest of that block is skipped.
+4. Successful plan blocks end with **`ResultSetAddStmt`**, which appends an object to an **implicit result set**.
+5. The result object holds **query variable bindings** (for entrypoints, typically `{ "result": <value> }`).
+6. Plans usually **call** functions under `funcs`; they do not contain full rule body logic.
 
-### Functions
+For our product API we still want a **stable Lua surface** like `module.allow(input, data) → value`, not necessarily OPA’s full result-set object—map IR results into that shape in the codegen layer.
+
+#### Plans vs funcs
+
+| | `plans` | `funcs` |
+|--|---------|---------|
+| Role | Query entrypoints | Rule/function bodies |
+| Output | Implicit result set | Explicit `ReturnLocalStmt` |
+| Pre-bound | 0=input, 1=data | Params listed (`params`, `return`) |
+| Typical content | Thin wrapper | Real policy (`lower`, `==`, default) |
+
+### `funcs`
 
 Each function:
 
@@ -126,6 +164,19 @@ Each statement JSON roughly:
 }
 ```
 
+### Locals (slots)
+
+| | Meaning |
+|--|---------|
+| **Index** | Always an integer slot number (`0`, `1`, `2`, …) |
+| **Value in the slot** | Any IR value: null, bool, number, string, array, object, **set**, or **undefined** |
+
+Slots are **untyped registers**; values carry runtime types. The plan JSON does not declare “local 4 is always object”—that follows from what wrote the slot.
+
+- **IR contract:** local is a 32-bit integer; no small fixed bank (not “only 0–15”).
+- Frames are **separate**: plan local 2 ≠ function local 2 until the call returns into the plan’s slot.
+- `CallStmt.result` is chosen per call; locals are virtual slots, not a tiny CPU register file that the next call always clobbers.
+
 ### Operand (tagged union)
 
 Operands appear all over IR:
@@ -138,9 +189,78 @@ Operands appear all over IR:
 
 Codegen needs a small helper: `operand_to_lua(op, env) → expression string`.
 
-### Example (trimmed from a real `plan.json`)
+### Why untyped slots help codegen
 
-Plan entry calling a compiled function, then building a result object:
+Rego works over nested documents; the same path may be missing or different types depending on input/data. Untyped locals avoid full type inference in the planner:
+
+```text
+allocate local → emit Dot/Call/Equal/Assign → done
+```
+
+| Untyped IR | Typed IR |
+|------------|----------|
+| Easier Rego → IR | Harder planner |
+| Dynamic checks at eval | Stronger static checking for backends |
+
+IR locals are like **dynamically typed slots**, not “weak typing” (implicit coercions). Wrong ops fail or go undefined rather than silently coercing.
+
+---
+
+## 4. Worked example (`example/allow`)
+
+Source policy:
+
+```rego
+package example
+
+default allow := false
+
+allow if {
+	lower(input.user) == "alice"
+}
+```
+
+Built with:
+
+```bash
+opa build -t plan -e example/allow allow.rego
+```
+
+### Plan (five statements)
+
+| # | Stmt | Effect |
+|---|------|--------|
+| 1 | `CallStmt` | `g0.data.example.allow(local0, local1)` → local **2** |
+| 2 | `AssignVarStmt` | local **3** ← local **2** |
+| 3 | `MakeObjectStmt` | local **4** ← `{}` |
+| 4 | `ObjectInsertStmt` | local **4**`["result"]` ← local **3** |
+| 5 | `ResultSetAddStmt` | result set ← local **4** |
+
+Pipeline:
+
+```text
+input/data → call allow → bind "result" → { result: bool } → result set
+```
+
+One block is enough here: the rule always defines a value (`default allow := false`), so the plan always produces one solution on success.
+
+**Plan frame locals**
+
+| Local | Role |
+|------:|------|
+| 0 | `input` |
+| 1 | `data` |
+| 2 | call result (temp) |
+| 3 | query binding for `"result"` |
+| 4 | result object `{ result = … }` |
+
+### Statement notes (this plan)
+
+#### `CallStmt`
+
+Invokes a named function (or a builtin when compiling funcs). Stores the return value in `result` (a local index).
+
+Example (trimmed from a real `plan.json`):
 
 ```json
 {
@@ -156,11 +276,109 @@ Plan entry calling a compiled function, then building a result object:
 }
 ```
 
-You will also see `DotStmt`, `EqualStmt`, `MakeObjectStmt`, `ScanStmt` (iteration), `NotStmt`, etc. Full list: OPA IR docs “Statement Definitions”.
+#### `AssignVarStmt` (2 → 3)
+
+Copies the call result into the **query variable** local used for `"result"`.
+
+- **Conceptually:** temp (call output) → stable binding.
+- **In this plan:** redundant for correctness; nothing later overwrites local 2. OPA’s planner does not always eliminate the copy.
+
+#### `MakeObjectStmt`
+
+Creates an empty object `{}` in `target` (local 4). Always defined. Used so the plan can package bindings as an object for the result set.
+
+#### `ObjectInsertStmt`
+
+`object[key] = value` (in-place).
+
+- `key`: operand (here `string_index` 0 → `"result"`).
+- `value`: operand (here local 3).
+- `object`: local index of the object (4).
+
+Overwrite is allowed. Contrast **`ObjectInsertOnceStmt`**, which errors on conflicting redefinition (more common in rule construction).
+
+#### `ResultSetAddStmt`
+
+Publishes one solution object into the plan’s implicit result set. Empty result set = no solutions.
+
+### Function body (`g0.data.example.allow`)
+
+- Params: locals 0, 1 (`input`, `data`); return: local 2.
+- Path: `["g0", "example", "allow"]`.
+- Blocks encode: try body (`lower(input.user) == "alice"` → true), then if defined assign return, else default `false`, then return.
+- Function frame (separate from the plan): params 0–1, return 2, partial/temps 3–7.
+
+Uses **`AssignVarOnceStmt`**, **`ResetLocalStmt`**, **`IsDefinedStmt` / `IsUndefinedStmt`**, **`EqualStmt`**, **`DotStmt`**, **`CallStmt` (`lower`)**, **`ReturnLocalStmt`**.
+
+You will also see `ScanStmt` (iteration), `NotStmt`, etc. Full list: OPA IR docs “Statement Definitions”.
 
 ---
 
-## 4. Why Python for the backend
+## 5. Why Lua fits IR → codegen
+
+### Lua typing
+
+Lua is **dynamically typed**, not untyped:
+
+- Values have types at runtime (`nil`, boolean, number, string, table, function, …).
+- Variables/slots do not have fixed static types.
+
+That lines up well with IR locals: untyped slots, typed values. Easier than targeting a strictly statically typed language (no need to invent a static type for every temp).
+
+### Many IR statements map 1:1
+
+| IR | Lua sketch |
+|----|------------|
+| Local slots | locals or `L[i]` table |
+| Objects | `{}` tables |
+| `MakeObject` + `ObjectInsert` | `t = {}; t[key] = value` |
+| `CallStmt` | `L[2] = f(L[0], L[1])` |
+| `AssignVar` | `L[3] = L[2]` |
+| Result set | table of binding tables |
+
+Example sketch for the entrypoint plan:
+
+```lua
+function plan_example_allow(input, data)
+  local l2 = g0_data_example_allow(input, data)
+  local l3 = l2
+  local l4 = { result = l3 }
+  return { l4 }  -- result set (product API then unwraps to the rule value)
+end
+```
+
+### Preferred approach: AOT codegen (no mini-VM)
+
+Preferred: **AOT compile IR → real Lua**, then run on the normal LuaJIT VM.
+
+| Approach | Eval-time behavior |
+|----------|--------------------|
+| Mini-VM / interpreter | Loop over IR stmts, dispatch on `type` |
+| **Codegen** (preferred) | Generated functions *are* the plan |
+
+No second IR interpreter is required if generated Lua already implements IR semantics. IR “undefined → leave block” becomes ordinary Lua structure (`if`, nested functions, labels/`goto`), not a statement dispatcher.
+
+Still needed (as a **runtime library**, not a VM):
+
+- Builtins (`lower`, …) matching OPA where it matters
+- Set helpers if policies use sets
+- A convention for **undefined** (early return, `goto`, sentinel) mapped to Lua control flow
+- Optional shared helpers for dot/lookup, conflicts (`AssignVarOnce`), etc.
+
+A thin **VM-style** emitter (Lua that interprets a stmt list) can be a temporary bootstrap if it unlocks tests faster; do not treat it as the product architecture. Prefer lowering each stmt type to straight-line Lua as coverage grows.
+
+### What remains non-trivial for full fidelity
+
+- Full IR surface: `ScanStmt`, `WithStmt`, multi-block plans, multi-solution queries
+- Sets and number edge cases vs OPA
+- Builtin parity
+- Mapping result-set plans into our stable `module.rule(input, data) → value` API
+
+A **toy** for simple plans like `example/allow` can be small. **Full** IR coverage is mostly runtime/helper completeness plus careful control-flow lowering—not a separate mini-VM architecture.
+
+---
+
+## 6. Why Python for the backend
 
 | Need | Python fit |
 |------|------------|
@@ -176,7 +394,7 @@ Optional later: Jinja2, or generate from schema to typed models.
 
 ---
 
-## 5. Six implementation steps
+## 7. Six implementation steps
 
 ### Step 1 — Load and validate IR
 
@@ -243,19 +461,17 @@ Output shape (product convention):
 local foo = {}
 
 function foo.allow(input, data)
-  -- body generated from IR (or thin wrapper around plan execution)
+  -- body generated from IR (or thin wrapper around plan/func lowering)
   return result
 end
 
 return foo
 ```
 
-Two generation styles (pick one early):
+Generation style (see §5):
 
-1. **Direct style** — IR becomes straight-line Lua resembling `ref_lua` (easier to read, harder for full IR).  
-2. **VM style** — Lua function implements a small interpreter over locals + stmt list (closer to OPA IR execution model, easier completeness).
-
-For v0.1, **VM style over IR statements** is usually faster to get correct; optimize to direct style later for hot paths.
+1. **Direct AOT style** (preferred) — each IR stmt becomes straight-line Lua; closer to `ref_lua` readability as the emitter improves.  
+2. **VM style** — optional short-term bootstrap: a small interpreter over locals + stmt list.
 
 Also concatenate a **runtime preamble** (helpers + undef + sets).
 
@@ -281,7 +497,7 @@ Until the binary exists, `t::Rego` still falls back to `--- ref_lua`.
 
 ---
 
-## 6. Runtime helpers (Lua)
+## 8. Runtime helpers (Lua)
 
 Hand-written, shipped with every generated module (or a shared `rego_rt.lua` required by generated code).
 
@@ -303,7 +519,7 @@ rt.builtins["plus"] = ... -- as needed
 
 ---
 
-## 7. Suggested Python layout
+## 9. Suggested Python layout
 
 ```text
 rego2lua/                 # or ir2lua/
@@ -325,18 +541,19 @@ python -m rego2lua compile plan.json -o policy.lua
 
 ---
 
-## 8. Development tips
+## 10. Development tips
 
-1. **Start with load + dump**: pretty-print plans/funcs from `opa/plan.json` before generating Lua.  
+1. **Start with load + dump**: pretty-print plans/funcs from a real `plan.json` before generating Lua.  
 2. **One statement type per PR**; unlock one `.t` case at a time.  
 3. Keep runtime helpers in **one editable Lua blob**.  
 4. Prefer correctness over pretty Lua until `sanity.t` is green on IR path.  
 5. Log IR `type` on unknown statements; fail closed.  
-6. Use `--- ONLY` in `.t` files when debugging generated Lua dumps.
+6. Use `--- ONLY` in `.t` files when debugging generated Lua dumps.  
+7. Walk the §4 example end-to-end once by hand (plan + func locals) before automating.
 
 ---
 
-## 9. Mapping IR statements → early priority
+## 11. Mapping IR statements → early priority
 
 | Priority | IR `type` | Needed for |
 |----------|-----------|------------|
@@ -346,6 +563,7 @@ python -m rego2lua compile plan.json -o policy.lua
 | P0 | `EqualStmt`, `NotEqualStmt` | compares |
 | P0 | `CallStmt`, `ReturnLocalStmt` | funcs / entry |
 | P1 | `MakeObjectStmt`, `ObjectInsertStmt`, `MakeArrayStmt`, `ArrayAppendStmt` | structures |
+| P1 | `ResultSetAddStmt` | plan entrypoints (then unwrap to rule value) |
 | P1 | `NotStmt` | `not` |
 | P1 | `ScanStmt`, `Is*` checks | membership / iteration |
 | P2 | `MakeSetStmt`, `SetAddStmt` | sets |
@@ -353,18 +571,18 @@ python -m rego2lua compile plan.json -o policy.lua
 
 ---
 
-## 10. Relation to other docs
+## 12. Relation to other docs
 
 | Doc | Role |
 |-----|------|
-| **This guide** | Production backend: **OPA IR → Lua** |
+| **This guide** | Production backend: **OPA IR → Lua** (shape, worked example, codegen plan) |
 | `learning-tokenize.md` | Educational Rego lexer (not required if OPA is frontend) |
 | `learning-ast.md` | Educational AST / recursive descent |
 | `README.md` / `t/*.t` | Behavioral contract for generated Lua |
 
 ---
 
-## 11. References
+## 13. References
 
 - OPA IR documentation: https://www.openpolicyagent.org/docs/ir  
 - IR Go package: https://github.com/open-policy-agent/opa/tree/main/v1/ir  
@@ -373,10 +591,11 @@ python -m rego2lua compile plan.json -o policy.lua
 
 ---
 
-## 12. Checklist
+## 14. Checklist
 
 - [ ] Generate `plan.json` for `example.rego` / a `sanity` policy  
 - [ ] Load IR in Python; print plan names and stmt type histogram  
+- [ ] Hand-trace the §4 plan + func locals once  
 - [ ] Implement P0 statements + minimal runtime  
 - [ ] Emit `package` module API matching `ref_lua`  
 - [ ] Green: first case of `t/sanity.t` via IR path  
