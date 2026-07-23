@@ -4,6 +4,8 @@ A **practical subset** of OPA Rego built-ins for Web Application Firewall user c
 
 Full catalog: [`rego-builtins.md`](./rego-builtins.md) · Official docs: [Rego Built-ins](https://www.openpolicyagent.org/docs/policy-reference/builtins)
 
+Implementers (difficulty, deps, build order): [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md)
+
 Typical WAF inputs look like:
 
 ```text
@@ -336,5 +338,7 @@ For this repo’s IR → Lua path, unlock tests roughly in this order:
 5. `net.cidr_contains`  
 6. `urlquery.*` / `base64.*` / `json.unmarshal`  
 7. Everything else as needed by product rules  
+
+Per-function **priority × pure-Lua difficulty × dependencies**: [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md).
 
 See also: project goal in `AGENTS.md` and implementation notes in the IR guide.
