@@ -18,8 +18,9 @@ Rego source  ──(OPA)──►  plan.json (IR)  ──(this project)──►
 Target runtime: **LuaJIT 2.1** (same language level as OpenResty). Generated modules should match our test conventions:
 
 - Package table + **rule name = function name** (`foo.allow(input, data)`).
+- **Always** emit `(input, data)` — the harness calls every rule with both (`t/eval_pkg.lua`).
 - Behavioral gold: `t/*.t` `--- out` (via `prove` / `t::Rego`).
-- `--- ref_lua` remains a bootstrap / human reference until IR→Lua is trusted.
+- `--- ref_lua` remains a bootstrap / human reference until IR→Lua is trusted; hand refs may omit unused `data`, but codegen must not.
 
 ### Non-goals (for this backend)
 
@@ -454,19 +455,20 @@ Implement **one statement type at a time**, gated by which tests you unlock.
 
 ### Step 5 — Complete Lua module
 
-Output shape (product convention):
+Output shape (product convention — **both** args always):
 
 ```lua
 -- <original rego as comments optional if you still have source>
 local foo = {}
 
 function foo.allow(input, data)
-  -- body generated from IR (or thin wrapper around plan/func lowering)
   return result
 end
 
 return foo
 ```
+
+Do not emit `function foo.allow(input)` only. Locals 0/1 in IR are `input`/`data`; the stable Lua surface mirrors that. Bootstrap `ref_lua` in tests may still use a single-arg form when `data` is unused — that is not the product API.
 
 Generation style (see §5):
 
@@ -576,9 +578,18 @@ python -m rego2lua compile plan.json -o policy.lua
 | Doc | Role |
 |-----|------|
 | **This guide** | Production backend: **OPA IR → Lua** (shape, worked example, codegen plan) |
+| `rego-builtins.md` | Full OPA built-in catalog (reference; not day-one backlog) |
+| `rego-builtins-waf.md` | WAF product subset — which builtins rule authors need |
+| `rego-builtins-waf-runtime.md` | How to implement WAF builtins (pure LuaJIT → OpenResty backends) |
 | `learning-tokenize.md` | Educational Rego lexer (not required if OPA is frontend) |
 | `learning-ast.md` | Educational AST / recursive descent |
-| `README.md` / `t/*.t` | Behavioral contract for generated Lua |
+| `README.md` / `t/*.t` / `AGENTS.md` | Behavioral contract, module API, agent priorities |
+
+**Layers of work**
+
+1. **This guide + `t/*.t`** — IR statements and minimal runtime until `./go` is green on the IR path.  
+2. **WAF builtins** — after (1); product surface in `rego-builtins-waf.md`, implement/CI order in `rego-builtins-waf-runtime.md` (usage order ≠ implement order; e.g. `regex.*` is OpenResty Tier 1.2).  
+3. **Learning notes** — optional; do not rebuild OPA’s frontend.
 
 ---
 

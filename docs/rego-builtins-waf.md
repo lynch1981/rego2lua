@@ -240,7 +240,7 @@ Skip these unless product requirements demand them:
 
 ## Suggested starter set (implement first)
 
-If you only ship a **small runtime** (e.g. rego2lua for WAF), implement these first:
+If you only ship a **small runtime** (e.g. rego2lua for WAF), these are the **product** builtins to cover first (what rule authors need). **How/when** to implement them on pure LuaJIT vs OpenResty is in [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md) — notably **`regex.*` is product-early but CI-late** (OpenResty `ngx.re` backend; do not hand-roll in Step 1).
 
 ```text
 # compare
@@ -251,7 +251,7 @@ contains  startswith  endswith  lower  upper
 split  concat  substring  replace  trim_space
 sprintf
 
-# regex / glob
+# regex / glob  — regex: high product ROI, implement via OpenResty backend (runtime Tier 1.2)
 regex.match  regex.is_valid  regex.replace
 glob.match
 
@@ -329,16 +329,23 @@ deny contains "body too large" if {
 
 ## Mapping to rego2lua priorities
 
-For this repo’s IR → Lua path, unlock tests roughly in this order:
+Two layers — do not mix them up:
+
+| Layer | What | Where |
+|-------|------|--------|
+| **IR / tests** | Unlock `t/*.t` (sanity → scalars → access → membership → cmp) | [`ir2lua-guide.md`](./ir2lua-guide.md), `AGENTS.md`, `./go` |
+| **WAF builtins** | Product rule surface after core IR works | This file (usage) + [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md) (build order) |
+
+**Product usage order** (what WAF rules need), not CI order:
 
 1. Comparisons + `object.get` / field access  
 2. `contains` / `startswith` / `endswith` / `lower`  
 3. `count` + `in` / scan  
-4. `regex.match`  
+4. `regex.match` — **high product priority**, but **implement late in Step 1 CI**: OpenResty backend (**runtime Tier 1.2**), not pure-Lua  
 5. `net.cidr_contains`  
 6. `urlquery.*` / `base64.*` / `json.unmarshal`  
 7. Everything else as needed by product rules  
 
-Runtime split **Tier N.1.x (pure Lua slices)** / **Tier N.2 (OpenResty)**: [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md).
+**Implementer order** (pure Lua first, then platform): runtime build summary — 1.1.1 → … → 1.1.5 → 2.1.x, then **1.2 regex**, then 2.2 / 3.x. See that file for deps and backends.
 
-See also: project goal in `AGENTS.md` and implementation notes in the IR guide.
+See also: project goal in `AGENTS.md` and IR statement coverage in the IR guide.

@@ -1,25 +1,34 @@
 # Learning Tokenization for Rego
 
-> Study note for **rego2lua**: how to turn Rego source into a token stream before parsing.
+> **Educational only — not the production path.**  
+> Production **rego2lua** starts from **OPA plan IR (JSON)** and emits Lua; OPA already lexes/parses Rego. Do **not** implement a project lexer/parser unless the charter explicitly pivots.  
+> Production docs: [`ir2lua-guide.md`](./ir2lua-guide.md), [`AGENTS.md`](../AGENTS.md). Companion learning note: [`learning-ast.md`](./learning-ast.md).
+
+> Study note: how a Rego lexer would turn source into a token stream before parsing — for compiler learning only.
 
 ---
 
-## 1. Why a lexer for this project
+## 1. Why study a lexer (even though production skips it)
 
-**rego2lua** is a source-to-source compiler:
+In a **classic** source-to-source compiler the pipeline looks like:
 
 ```text
 Rego source  →  Lexer  →  Tokens  →  Parser  →  AST  →  Lua
 ```
 
-The lexer’s job is only:
+**rego2lua production pipeline** (what agents implement) is shorter:
+
+```text
+Rego source  →  OPA (`opa build -t plan`)  →  plan.json (IR)  →  IR→Lua codegen  →  Lua
+```
+
+This note still describes the lexer’s job so the learning path makes sense:
 
 1. Read characters from the Rego module (the `--- Rego` section of our tests).
 2. Emit a sequence of **tokens** (kind + text + location).
 3. Skip comments and insignificant whitespace (or keep newlines if you want position accuracy).
 
 It does **not** understand packages, rules, or precedence. That is the parser’s job (see `learning-ast.md`).
-
 ---
 
 ## 2. What we tokenize (v0.1 subset)
@@ -265,14 +274,16 @@ IDENT input  DOT  IDENT roles  LBRACK  UNDER  RBRACK  EQ  STRING "admin"
 
 ## 9. Relation to the rest of rego2lua
 
-| Stage | Doc / code |
-|-------|------------|
-| Tests define language surface | `t/*.t` (`--- Rego`) |
-| Lexer | this note → implement first |
-| AST + parser | `docs/learning-ast.md` |
-| Codegen | emit Lua (`ref_lua` is the golden shape today) |
+| Stage | Doc / code | Role |
+|-------|------------|------|
+| Behavioral contract | `t/*.t` (`--- out`) | What decisions must match |
+| **Production frontend** | OPA plan IR | Lex/parse/compile — **not** in this repo |
+| **Production backend** | [`ir2lua-guide.md`](./ir2lua-guide.md) | IR → Lua (Python codegen + runtime) |
+| Learning: lexer | this note | Optional study only |
+| Learning: AST + parser | [`learning-ast.md`](./learning-ast.md) | Optional study only |
+| Bootstrap reference | `--- ref_lua` | Hand Lua until IR→Lua is trusted |
 
-Once `next_token()` is stable, the parser can consume tokens instead of raw characters, and the AST notes apply directly.
+Once `next_token()` is stable **as a learning exercise**, a toy parser can consume tokens instead of raw characters. That work is **not** on the production critical path.
 
 ---
 
@@ -286,4 +297,6 @@ You should be able to:
 - [ ] Sketch `next_token()` for ident, number, string, ops
 - [ ] Hand-tokenize a small policy from `t/sanity.t` or `t/membership.t`
 
-**Next:** implement the toy Rego lexer in C/C++, feed it `--- Rego` samples, then connect to the expression AST parser.
+**Optional practice (learning only):** sketch or implement a toy lexer against `--- Rego` samples, then read [`learning-ast.md`](./learning-ast.md).
+
+**For product work:** follow [`ir2lua-guide.md`](./ir2lua-guide.md) and `AGENTS.md` (OPA IR → Lua). Do not land a production lexer here.

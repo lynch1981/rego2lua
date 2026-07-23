@@ -36,7 +36,7 @@ plan.json  ──►  rego2lua  ──►  portable Lua module
 2. Platform builtins go through a small **backend** interface (`regex_match`, `base64_decode`, …).
 3. Step 1 is the default CI bar. Step 2 only adds adapters + request wiring.
 
-Product **usage** tiers (Tier 1 / 2 / 3) still come from [`rego-builtins-waf.md`](./rego-builtins-waf.md). This file splits each into pure-Lua slices (**\*.1.x**) and OpenResty (**\*.2**):
+Product **usage** tiers (Tier 1 / 2 / 3) still come from [`rego-builtins-waf.md`](./rego-builtins-waf.md). **Usage order ≠ implement order:** e.g. `regex.match` is Tier 1 for rule authors but **Tier 1.2** here (OpenResty) — ship pure slices first so `prove t/*.t` stays nginx-free. This file splits each usage tier into pure-Lua slices (**\*.1.x**) and OpenResty (**\*.2**):
 
 ```text
 Tier 1  (use constantly)
@@ -328,6 +328,8 @@ Skip pure crypto / JWT **verify** — use **3.2**.
 
 ## Build order summary
 
+This table is **implement / CI order**, not product “need these in rules first.” WAF authors want `regex.*` early ([`rego-builtins-waf.md`](./rego-builtins-waf.md)); we still implement it as **1.2** after pure slices so Step 1 CI needs no nginx.
+
 | Order | Tier | Where | What |
 | --- | ---: | --- | --- |
 | 1 | **1.1.1** | Pure LuaJIT | cmp, types, numbers, `:=`, `default` |
@@ -338,7 +340,7 @@ Skip pure crypto / JWT **verify** — use **3.2**.
 | 6 | **2.1.1** | Pure LuaJIT | `urlquery.*`, `base64.*`, `hex.*` |
 | 7 | **2.1.2** | Pure + `cjson` | `json.unmarshal` / `is_valid` / `marshal` |
 | 8 | **2.1.3** | Pure LuaJIT | `uri.*`, string extras |
-| 9 | **1.2** | OpenResty | `regex.*` via `ngx.re` |
+| 9 | **1.2** | OpenResty | `regex.*` via `ngx.re` (product-early, CI-late) |
 | 10 | **2.2** | OpenResty | optional base64/uri overrides |
 | 11 | **3.1 / 3.2** | As needed | time pure; JWT verify / crypto on OpenResty |
 

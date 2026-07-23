@@ -1,15 +1,24 @@
 # Learning Abstract Syntax Trees (AST)
 
-> A detailed study note from learning how to build a source-to-source compiler (Rego → Lua)
+> **Educational only — not the production path.**  
+> Production **rego2lua** does **not** parse Rego into an AST in-tree. OPA emits **plan IR (JSON)**; this project lowers IR → Lua. Do **not** implement a project parser/AST unless the charter explicitly pivots.  
+> Production docs: [`ir2lua-guide.md`](./ir2lua-guide.md), [`AGENTS.md`](../AGENTS.md). Companion learning note: [`learning-tokenize.md`](./learning-tokenize.md).
+
+> Study note: how ASTs work in a classic source-to-source compiler (Rego → Lua) — for learning only.
 
 ---
 
 ## 1. Background
 
-The goal is to implement a **source-to-source compiler** (transpiler) that converts a subset of **OPA Rego** into **Lua**.
+In a **classic** compiler course project you might build a full frontend that converts a subset of **OPA Rego** into **Lua** via lexer → parser → AST → codegen.
 
-To build any compiler, the most important intermediate structure is the **Abstract Syntax Tree (AST)**.
-This document records the step-by-step learning process of understanding and building ASTs.
+**rego2lua production path** skips that frontend:
+
+```text
+Rego source  →  OPA (`opa build -t plan`)  →  plan.json (IR)  →  IR→Lua  →  Lua
+```
+
+The AST is still the most important intermediate structure for **understanding** compilers. This document records how ASTs are built and read — as study material, not as the repo implementation plan.
 
 ---
 
@@ -348,15 +357,15 @@ We decided to fully master **Recursive Descent** first, because it is the most e
 
 ---
 
-## 11. Connection to the Rego → Lua Project
+## 11. Connection to the Rego → Lua project
 
-All the knowledge above is preparation for the real project.
+AST fluency helps you reason about compilers, but **it is not the production intermediate** for this repo. Production walks **OPA plan IR** (statements, locals, blocks), not a hand-built Rego AST. See [`ir2lua-guide.md`](./ir2lua-guide.md).
 
-Previously we already designed:
+Earlier learning designs (for study only) included:
 - A formal grammar for a practical v0.1 subset of Rego
 - A detailed C-style AST for Rego constructs (`Module`, `Package`, `DefaultRule`, `CompleteRule`, `Query`, expressions, references, etc.)
 
-Once comfortable with basic expression ASTs, the next step is to implement the real Rego AST nodes and parser.
+Those designs remain useful background. They are **not** a backlog item for agents implementing rego2lua.
 
 ---
 
@@ -375,7 +384,9 @@ You now understand:
 
 ---
 
-**Next recommended steps:**
+**Optional practice (learning only):**
 1. Practice drawing more ASTs by hand
-2. Implement the basic expression AST + parser in C/C++
-3. Return to the Rego AST design and start implementing it
+2. Sketch a basic expression AST + recursive-descent parser (any language)
+3. Optionally extend the toy AST — still outside the production path
+
+**For product work:** implement IR → Lua per [`ir2lua-guide.md`](./ir2lua-guide.md) and `AGENTS.md`. Do not land a production Rego parser/AST here.

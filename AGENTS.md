@@ -25,6 +25,17 @@ Keep the translator small and correct. Prefer a working subset of IR/statement t
 
 Primary design doc: **`docs/ir2lua-guide.md`**.
 
+### Layers of work
+
+| Layer | Goal | Docs |
+|-------|------|------|
+| **1. IR → Lua** | Green `t/*.t` / `./go`; statement coverage | `docs/ir2lua-guide.md` |
+| **2. WAF builtins** | Product rule surface (after core IR) | `docs/rego-builtins-waf.md` (what), `docs/rego-builtins-waf-runtime.md` (how / pure vs OpenResty) |
+| **3. Full catalog** | Lookup only; not a backlog | `docs/rego-builtins.md` |
+| **Learning** | Optional compiler study | `docs/learning-tokenize.md`, `docs/learning-ast.md` |
+
+Do **not** treat WAF “implement first” lists as the IR test order, or learning lexer/parser notes as production work. Usage order ≠ implement order for some builtins (e.g. `regex.*` is product-early, CI-late).
+
 Optional background only (not the production pipeline):
 
 - `docs/learning-tokenize.md` — Rego lexer (learning)
@@ -76,13 +87,16 @@ Do **not** spend effort re-building OPA’s lexer/parser unless the project expl
 
 Output must satisfy:
 
-1. **Optional header** — original Rego as `--` line comments is fine (and useful for debugging).
-2. **No other comments** in the body (no EmmyLua, no restated IR notes).
-3. **Same decisions** as Rego for the given `input` / `data`.
-4. **Rule name = function name**
+1. **Same decisions** as Rego for the given `input` / `data`.
+2. **Rule name = function name**
    - `package foo` → module table `foo`
    - rule `allow` → `function foo.allow(input, data)` returning the rule value
+   - Always take **both** `input` and `data` (harness and OpenResty callers pass both)
    - Do not invent APIs (`eval`, `check`, …) that are not Rego rules
+
+Lua comments are free (header or body); they are not part of the behavioral contract.
+
+Bootstrap `--- ref_lua` fixtures may omit the `data` parameter when unused; that is tolerated only for hand refs. Generated Lua must use `(input, data)`.
 
 ### Example shape
 
@@ -94,7 +108,6 @@ Output must satisfy:
 local foo = {}
 
 function foo.allow(input, data)
-  -- generated from IR (or bootstrap ref)
   return allow
 end
 
@@ -106,6 +119,9 @@ return foo
 | Path | Role |
 |------|------|
 | `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua) |
+| `docs/rego-builtins.md` | Full OPA built-in catalog (reference) |
+| `docs/rego-builtins-waf.md` | WAF product subset (usage tiers) |
+| `docs/rego-builtins-waf-runtime.md` | WAF runtime implement order (pure Lua → OpenResty) |
 | `docs/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
 | `t/*.t` | Behavioral regression tests |
 | `t/Rego.pm` | Harness: get Lua → run under LuaJIT → compare `--- out` |
@@ -121,7 +137,7 @@ OpenResty-style `Test::Base` files. Success = **Lua behavior matches `--- out`**
 | `input` | JSON OPA/Rego **input** |
 | `data` | JSON OPA/Rego **data** (often `{}`) |
 | `Rego` | Policy source (OPA produces IR from this; human-readable fixture) |
-| `ref_lua` | Hand reference Lua — **bootstrap** until IR→Lua works |
+| `ref_lua` | Hand reference Lua — **bootstrap** until IR→Lua works (may omit unused `data`; generated code must not) |
 | `out` | Expected `{ rule_name: value, ... }` |
 | `ONLY` | Test::Base: run only this block; harness prints Lua under test |
 
