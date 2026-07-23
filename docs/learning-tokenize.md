@@ -269,7 +269,7 @@ IDENT input  DOT  IDENT roles  LBRACK  UNDER  RBRACK  EQ  STRING "admin"
 |-------|------------|
 | Tests define language surface | `t/*.t` (`--- Rego`) |
 | Lexer | this note → implement first |
-| AST + parser | `doc/learning-ast.md` |
+| AST + parser | `docs/learning-ast.md` |
 | Codegen | emit Lua (`ref_lua` is the golden shape today) |
 
 Once `next_token()` is stable, the parser can consume tokens instead of raw characters, and the AST notes apply directly.

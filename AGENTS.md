@@ -23,12 +23,12 @@ Rego source  ──►  OPA (`opa build -t plan`)  ──►  plan.json (IR)  �
 
 Keep the translator small and correct. Prefer a working subset of IR/statement types over full OPA feature coverage until the scope is expanded.
 
-Primary design doc: **`doc/IR_to_Lua_Guide.md`**.
+Primary design doc: **`docs/ir2lua-guide.md`**.
 
 Optional background only (not the production pipeline):
 
-- `doc/learning-tokenize.md` — Rego lexer (learning)
-- `doc/learning-ast.md` — AST / recursive descent (learning)
+- `docs/learning-tokenize.md` — Rego lexer (learning)
+- `docs/learning-ast.md` — AST / recursive descent (learning)
 
 ## Target runtime
 
@@ -45,7 +45,7 @@ Every commit message **must** start with one of these prefixes (lowercase, with 
 
 | Prefix | Use when |
 |--------|----------|
-| `doc:` | Documentation only (`README`, `AGENTS.md`, `doc/*`, comments that do not change behavior) |
+| `doc:` | Documentation only (`README`, `AGENTS.md`, `docs/*`, comments that do not change behavior) |
 | `bugfix:` | Fix incorrect behavior or a failing test that already covered the intent |
 | `feature:` | New product capability (translator, runtime, module API, CLI, …) |
 | `tests:` | Test harness, fixtures, suites (`t/*`, `go`, eval helpers) with no production behavior change |
@@ -105,8 +105,8 @@ return foo
 
 | Path | Role |
 |------|------|
-| `doc/IR_to_Lua_Guide.md` | **Main** implementation plan (IR → Lua) |
-| `doc/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
+| `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua) |
+| `docs/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
 | `t/*.t` | Behavioral regression tests |
 | `t/Rego.pm` | Harness: get Lua → run under LuaJIT → compare `--- out` |
 | `t/eval_pkg.lua` | Call each exported rule; print JSON (`lua-cjson`) |
@@ -156,4 +156,4 @@ Needs: `luajit`, `lua-cjson`, `opa` (for IR generation), Perl `Test::Base` (`lib
 | `membership.t` | `"x" in arr`, `arr[_] == "x"` |
 | `cmp_*.t` | `==` `!=` `>` `>=` `<` `<=` |
 
-Implement IR statement support in roughly this order so tests unlock early (details in `doc/IR_to_Lua_Guide.md`).
+Implement IR statement support in roughly this order so tests unlock early (details in `docs/ir2lua-guide.md`).
