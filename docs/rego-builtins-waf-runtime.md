@@ -36,12 +36,26 @@ plan.json  ──►  rego2lua  ──►  portable Lua module
 2. Platform builtins go through a small **backend** interface (`regex_match`, `base64_decode`, …).
 3. Step 1 is the default CI bar. Step 2 only adds adapters + request wiring.
 
-Product **usage** tiers (Tier 1 / 2 / 3) still come from [`rego-builtins-waf.md`](./rego-builtins-waf.md). This file splits each into **\*.1 pure Lua** and **\*.2 OpenResty**.
+Product **usage** tiers (Tier 1 / 2 / 3) still come from [`rego-builtins-waf.md`](./rego-builtins-waf.md). This file splits each into pure-Lua slices (**\*.1.x**) and OpenResty (**\*.2**):
 
 ```text
-Tier 1  (use constantly)     →  1.1 pure Lua   +  1.2 OpenResty
-Tier 2  (encoding / body)    →  2.1 pure Lua   +  2.2 OpenResty
-Tier 3  (auth / time / crypto) →  3.1 pure Lua +  3.2 OpenResty
+Tier 1  (use constantly)
+  1.1.1  pure — compare, types, numbers
+  1.1.2  pure — object.*
+  1.1.3  pure — strings
+  1.1.4  pure — collections, scan, sets
+  1.1.5  pure — glob + CIDR
+  1.2    OpenResty — regex
+
+Tier 2  (encoding / body)
+  2.1.1  pure — base64 / hex / urlquery
+  2.1.2  pure + cjson — json
+  2.1.3  pure — uri + string extras
+  2.2    OpenResty — optional platform overrides
+
+Tier 3  (auth / time / crypto)
+  3.1    pure — jwt decode, time parse, units, trace
+  3.2    OpenResty — jwt verify, crypto
 ```
 
 ---
@@ -53,13 +67,13 @@ Both backends implement the same surface; core builtins call this table only.
 ```lua
 -- backend/pure.lua  or  backend/openresty.lua
 return {
-  regex_match   = function(pattern, value) ... end,
+  regex_match    = function(pattern, value) ... end,
   regex_is_valid = function(pattern) ... end,
-  regex_replace = function(s, pattern, value) ... end,
-  base64_decode = function(s) ... end,
-  base64_encode = function(s) ... end,
-  json_decode   = function(s) ... end,  -- often wraps cjson in both steps
-  json_encode   = function(v) ... end,
+  regex_replace  = function(s, pattern, value) ... end,
+  base64_decode  = function(s) ... end,
+  base64_encode  = function(s) ... end,
+  json_decode    = function(s) ... end,  -- often wraps cjson in both steps
+  json_encode    = function(v) ... end,
   -- crypto / time only when Tier 3 ships
 }
 ```
@@ -73,14 +87,14 @@ Dialect note: OPA regex is **RE2 / Go**-style. `ngx.re` / PCRE is close for most
 | Dep | Step | Used for |
 | --- | --- | --- |
 | *(none)* | 1 & 2 | stdlib / small in-repo pure Lua |
-| `bit` | 1 & 2 | LuaJIT `bit.*` (IPv4 CIDR) |
-| `cjson` | 1 & 2 | JSON; already used by `t/eval_pkg.lua` |
-| `ngx.re` / PCRE | **2** (or `lrexlib` in CI) | `regex.*` |
-| `ngx.decode_base64` / encode | **2** | `base64.*` (optional; pure Lua OK) |
-| `ngx.unescape_uri` | **2** | `urlquery` (optional; pure Lua OK) |
-| `resty.openssl` / `luaossl` | **2** | hash, HMAC, RSA |
-| `resty.jwt` | **2** | JWT decode / verify |
-| `ngx.now` | **2** | time helpers |
+| `bit` | 1 & 2 | LuaJIT `bit.*` (IPv4 CIDR) — from **1.1.5** |
+| `cjson` | 1 & 2 | JSON — from **2.1.2**; already in `t/eval_pkg.lua` |
+| `ngx.re` / PCRE | **2** (or `lrexlib` in CI) | `regex.*` — **1.2** |
+| `ngx.decode_base64` / encode | **2** | optional **2.2** |
+| `ngx.unescape_uri` | **2** | optional **2.2** |
+| `resty.openssl` / `luaossl` | **2** | **3.2** crypto |
+| `resty.jwt` | **2** | **3.2** JWT verify |
+| `ngx.now` | **2** | optional time |
 
 ---
 
@@ -90,13 +104,50 @@ WAF rules hit these every day (path, header, IP, method, query, simple payload).
 
 ### Tier 1.1 — Pure Lua (Step 1)
 
-Implement and test on plain LuaJIT. No `ngx.*`.
+Implement and test on plain LuaJIT. No `ngx.*`. One concern per slice.
+
+IR **field access** (`input.method`, nested paths) is codegen, not `object.*`. Keep those separate: lower field access with **1.1.1**, ship the `object.*` builtins as **1.1.2**.
+
+#### Tier 1.1.1 — Compare, types, numbers
+
+Unlocks scalar decisions and `cmp_*.t` / parts of `sanity.t`.
 
 | Function | Difficulty | Dep | Notes |
 | --- | --- | --- | --- |
 | `equal` (`==`) | Easy | *(none)* | Undefined ≠ Lua `nil` |
 | `neq` (`!=`) | Easy | *(none)* | |
 | `gt` / `gte` / `lt` / `lte` | Easy | *(none)* | |
+| `is_string` / `is_number` / `is_array` / `is_object` / `is_boolean` / `is_null` | Easy | *(none)* | Array vs object tables |
+| `type_name` | Easy | *(none)* | |
+| `to_number` | Easy | *(none)* | Invalid → undefined |
+| `plus` / `minus` / `mul` / `div` / `rem` | Easy | *(none)* | |
+| `abs` | Easy | *(none)* | |
+| `numbers.range` | Easy | *(none)* | |
+
+**Language features (with 1.1.1)**
+
+| Feature | Difficulty | Notes |
+| --- | --- | --- |
+| `:=` | Easy | Locals in generated Lua |
+| `default` | Easy | Default rule values |
+| `not` | Medium | Can start here; full power with scan later |
+
+#### Tier 1.1.2 — Object helpers
+
+Safe lookup / shape ops for headers, query maps, config bags. Distinct from IR path access.
+
+| Function | Difficulty | Dep | Notes |
+| --- | --- | --- | --- |
+| `object.get` | Easy | *(none)* | Default when key missing (WAF headers) |
+| `object.keys` | Easy | *(none)* | Key order not guaranteed |
+| `object.filter` | Easy | *(none)* | Keep selected keys |
+| `object.remove` | Easy | *(none)* | Drop hop-by-hop noise |
+| `object.subset` | Medium | *(none)* | Nested deep compare |
+
+#### Tier 1.1.3 — Strings
+
+| Function | Difficulty | Dep | Notes |
+| --- | --- | --- | --- |
 | `contains` | Easy | *(none)* | |
 | `startswith` | Easy | *(none)* | |
 | `endswith` | Easy | *(none)* | |
@@ -108,51 +159,40 @@ Implement and test on plain LuaJIT. No `ngx.*`.
 | `replace` | Easy | *(none)* | All-occurrences semantics |
 | `trim` / `trim_space` / `trim_prefix` / `trim_suffix` | Easy | *(none)* | Starter: `trim_space` |
 | `sprintf` | Medium | *(none)* | Go `fmt` ≠ `string.format` |
-| `glob.match` | Medium | *(none)* | Delimiter-aware `**` |
-| `net.cidr_contains` | Medium* | `bit` | *IPv4 first; IPv6 is Hard |
-| `net.cidr_intersects` | Medium* | `bit` | |
-| `net.cidr_is_valid` | Medium* | `bit` | |
-| `net.cidr_contains_matches` | Medium* | `bit` | Batch wrappers |
+
+#### Tier 1.1.4 — Collections, scan, sets
+
+| Function | Difficulty | Dep | Notes |
+| --- | --- | --- | --- |
 | `count` | Easy | *(none)* | String vs collection |
-| `in` | Easy–Medium | *(none)* | Needs scan / membership |
-| `object.get` | Easy | *(none)* | |
-| `object.keys` | Easy | *(none)* | |
-| `object.filter` | Easy | *(none)* | |
-| `object.remove` | Easy | *(none)* | |
-| `object.subset` | Medium | *(none)* | Nested deep compare |
+| `in` | Easy–Medium | *(none)* | Membership |
 | `array.concat` | Easy | *(none)* | |
 | `array.slice` | Easy | *(none)* | |
 | `array.flatten` | Easy | *(none)* | |
-| `is_string` / `is_number` / `is_array` / `is_object` / `is_boolean` / `is_null` | Easy | *(none)* | Array vs object tables |
-| `type_name` | Easy | *(none)* | |
-| `to_number` | Easy | *(none)* | Invalid → undefined |
-| `plus` / `minus` / `mul` / `div` / `rem` | Easy | *(none)* | |
-| `abs` | Easy | *(none)* | |
-| `numbers.range` | Easy | *(none)* | |
 | `intersection` | Medium | *(none)* | Set model + equality |
 | `union` | Medium | *(none)* | |
 | `and` / `or` / `minus` (sets) | Medium | *(none)* | Starter: `minus` |
 
-**Language features (Step 1 — essential)**
+**Language features (with 1.1.4)**
 
 | Feature | Difficulty | Notes |
 | --- | --- | --- |
-| `not` | Medium | Undefined / negation semantics |
 | `in` | Easy–Medium | |
 | `_` (scan / any) | Medium | Iteration + short-circuit |
-| `:=` | Easy | Locals in generated Lua |
-| `default` | Easy | Default rule values |
 
-**Step 1 unlock order (this repo)**
+#### Tier 1.1.5 — Glob & network (CIDR)
 
-1. Comparisons + `object.get` / field access  
-2. `contains` / `startswith` / `endswith` / `lower`  
-3. `count` + `in` / `_` scan  
-4. Sets + `glob.match` + IPv4 `net.cidr_*`  
+| Function | Difficulty | Dep | Notes |
+| --- | --- | --- | --- |
+| `glob.match` | Medium | *(none)* | Delimiter-aware `**` |
+| `net.cidr_contains` | Medium* | `bit` | *IPv4 first; full IPv6 is Hard |
+| `net.cidr_intersects` | Medium* | `bit` | |
+| `net.cidr_is_valid` | Medium* | `bit` | |
+| `net.cidr_contains_matches` | Medium* | `bit` | Batch wrappers |
 
 ### Tier 1.2 — OpenResty (Step 2)
 
-Same product Tier 1, but needs a **platform backend**. Core still calls the backend API; OpenResty (or optional CI `lrexlib`) provides the implementation.
+Platform backend for regex. Core still calls the backend API only.
 
 | Function | Difficulty (via backend) | Backend | Notes |
 | --- | --- | --- | --- |
@@ -162,38 +202,56 @@ Same product Tier 1, but needs a **platform backend**. Core still calls the back
 | `regex.find_n` | Medium | multi-match glue | |
 | `regex.split` | Medium | split via `ngx.re` | |
 
-Optional Step 1 CI parity (not required for green pure suite):
+Optional CI without nginx:
 
 | Option | When |
 | --- | --- |
-| Stub / skip `regex.*` tests on pure LuaJIT | Default until regex is needed in `t/*.t` |
-| `lrexlib` / PCRE binding | Want regex tests without nginx |
-| Full `ngx.re` | Step 2 product + optional OpenResty smoke |
+| Stub / skip `regex.*` on pure LuaJIT | Default until needed in `t/*.t` |
+| `lrexlib` / PCRE | Regex tests without OpenResty |
+| Full `ngx.re` | Step 2 product + optional smoke |
 
 ---
 
 ## Tier 2 — Encoding & body inspection
 
-Use when rules inspect encoded payloads, query strings, or JSON bodies.
-
 ### Tier 2.1 — Pure Lua (Step 1)
 
-Prefer pure implementations so `prove` stays nginx-free. `cjson` is allowed as a **portable** C dep (works with plain LuaJIT; already in the harness).
+`prove` stays nginx-free. `cjson` allowed as a portable C dep from **2.1.2**.
+
+#### Tier 2.1.1 — Wire encoding (base64, hex, urlquery)
 
 | Function | Difficulty | Dep | Notes |
 | --- | --- | --- | --- |
-| `base64.decode` / `encode` | Medium | pure-Lua or later 2.2 | Padding / invalid input |
+| `base64.decode` / `encode` | Medium | pure-Lua | Padding / invalid input |
 | `base64.is_valid` | Medium | pure-Lua | |
 | `base64url.decode` / `encode` | Medium | pure-Lua | URL-safe alphabet |
+| `hex.decode` / `encode` | Easy | *(none)* | |
 | `urlquery.decode` / `encode` | Medium | pure-Lua | `%xx`, `+`, invalid escapes |
 | `urlquery.decode_object` | Medium | pure-Lua | Repeated keys → arrays |
 | `urlquery.encode_object` | Medium | pure-Lua | |
-| `hex.decode` / `encode` | Easy | *(none)* | |
-| `json.is_valid` | Easy (w/ cjson) | `cjson` | `pcall(cjson.decode)`; pure JSON is Medium–Hard |
+
+#### Tier 2.1.2 — JSON (`cjson`)
+
+| Function | Difficulty | Dep | Notes |
+| --- | --- | --- | --- |
+| `json.is_valid` | Easy (w/ cjson) | `cjson` | `pcall(cjson.decode)` |
 | `json.unmarshal` | Easy (w/ cjson) | `cjson` | Number / null edges |
 | `json.marshal` | Easy (w/ cjson) | `cjson` | |
 | `json.filter` | Medium | `cjson` + paths | Path logic still yours |
 | `json.remove` | Medium | same | |
+
+**Defer unless product needs them**
+
+| Function | Difficulty | Notes |
+| --- | --- | --- |
+| `json.patch` | Hard | Rare for WAF |
+| `json.match_schema` | Very hard | Full JSON Schema |
+| `json.verify_schema` | Very hard | |
+
+#### Tier 2.1.3 — URI & string extras
+
+| Function | Difficulty | Dep | Notes |
+| --- | --- | --- | --- |
 | `uri.parse` | Medium | pure-Lua | RFC-ish edge cases |
 | `uri.is_valid` | Medium | pure-Lua | |
 | `strings.count` | Easy | *(none)* | |
@@ -203,44 +261,31 @@ Prefer pure implementations so `prove` stays nginx-free. `cjson` is allowed as a
 | `indexof_n` | Easy | *(none)* | |
 | `format_int` | Easy | *(none)* | |
 
-**Defer in both steps unless product needs them**
-
-| Function | Difficulty | Notes |
-| --- | --- | --- |
-| `json.patch` | Hard | Rare for WAF rules |
-| `json.match_schema` | Very hard | Full JSON Schema |
-| `json.verify_schema` | Very hard | |
-
-**Step 1 unlock after Tier 1.1**
-
-5. `urlquery.*` / pure `base64.*`  
-6. `json.unmarshal` / `json.is_valid` (`cjson`)  
-
 ### Tier 2.2 — OpenResty (Step 2)
 
-Optional faster / platform-native backends. Same builtin names; swap backend only.
+Optional platform overrides. Same builtin names; swap backend only.
 
 | Function | Backend | Notes |
 | --- | --- | --- |
-| `base64.*` | `ngx.decode_base64` / `ngx.encode_base64` | Keep pure Lua if parity is already good |
+| `base64.*` | `ngx.decode_base64` / `ngx.encode_base64` | Keep pure if parity is good |
 | `urlquery.*` | `ngx.unescape_uri` (partial) | Prefer pure if OPA parity matters |
-| `json.*` | `cjson` (same as Step 1) | No change required |
+| `json.*` | `cjson` (same as 2.1.2) | No change required |
 | `uri.*` | keep pure or small helper | |
 
 ---
 
 ## Tier 3 — Auth, time, crypto (optional)
 
-Only if the WAF product exposes tokens, rate windows, or integrity checks.
+Only if the product exposes tokens, rate windows, or integrity checks.
 
 ### Tier 3.1 — Pure Lua (Step 1)
 
 | Function | Difficulty | Dep | Notes |
 | --- | --- | --- | --- |
-| `io.jwt.decode` | Medium | pure + `cjson` | Split parts + JSON only; no verify |
-| `time.now_ns` | Easy–Medium | *(none)* | Seconds vs ns; non-deterministic |
-| `time.parse_rfc3339_ns` | Medium | pure-Lua | TZ / fractional seconds |
-| `time.parse_ns` | Medium | pure-Lua | Layout language |
+| `io.jwt.decode` | Medium | pure + `cjson` | No verify |
+| `time.now_ns` | Easy–Medium | *(none)* | Non-deterministic |
+| `time.parse_rfc3339_ns` | Medium | pure-Lua | |
+| `time.parse_ns` | Medium | pure-Lua | |
 | `time.parse_duration_ns` | Medium | pure-Lua | Go-style `5m`, `1h` |
 | `time.diff` | Medium | *(none)* | |
 | `time.add_date` | Medium–Hard | pure-Lua | Calendar math |
@@ -248,15 +293,15 @@ Only if the WAF product exposes tokens, rate windows, or integrity checks.
 | `units.parse` | Medium | *(none)* | |
 | `trace` | Easy | *(none)* | No-op in prod OK |
 
-Skip pure implementations of crypto / JWT **verify** — use Tier 3.2.
+Skip pure crypto / JWT **verify** — use **3.2**.
 
 ### Tier 3.2 — OpenResty (Step 2)
 
 | Function | Difficulty (via backend) | Backend | Notes |
 | --- | --- | --- | --- |
-| `io.jwt.decode_verify` | Medium | `resty.jwt` + openssl | Claims + alg constraints |
+| `io.jwt.decode_verify` | Medium | `resty.jwt` + openssl | |
 | `io.jwt.verify_hs256` / `rs256` / … | Medium | openssl / resty.jwt | |
-| `crypto.sha256` / `sha1` / `md5` | Easy | `resty.openssl` / `ngx.md5` | Prefer OpenSSL |
+| `crypto.sha256` / `sha1` / `md5` | Easy | `resty.openssl` / `ngx.md5` | |
 | `crypto.hmac.sha256` | Easy | openssl | |
 | `crypto.hmac.equal` | Easy | openssl constant-time | Don’t DIY |
 | `time.now_ns` | Easy | `ngx.now` | Optional override of 3.1 |
@@ -285,31 +330,35 @@ Skip pure implementations of crypto / JWT **verify** — use Tier 3.2.
 
 | Order | Tier | Where | What |
 | --- | ---: | --- | --- |
-| 1 | **1.1** | Pure LuaJIT | cmp, strings, objects, arrays, types, `count` |
-| 2 | **1.1** | Pure LuaJIT | `in` / `_`, sets, `glob.match`, IPv4 `net.cidr_*` |
-| 3 | **2.1** | Pure + `cjson` | `urlquery.*`, `base64.*`, `json.unmarshal` |
-| 4 | **1.2** | OpenResty backend | `regex.match` (+ friends) via `ngx.re` |
-| 5 | **2.2** | OpenResty (optional) | platform base64/uri if useful |
-| 6 | **3.1 / 3.2** | As needed | time pure; JWT verify / crypto on OpenResty |
+| 1 | **1.1.1** | Pure LuaJIT | cmp, types, numbers, `:=`, `default` |
+| 2 | **1.1.2** | Pure LuaJIT | `object.get` / `keys` / `filter` / `remove` / `subset` |
+| 3 | **1.1.3** | Pure LuaJIT | string ops |
+| 4 | **1.1.4** | Pure LuaJIT | `count`, `in` / `_`, arrays, sets |
+| 5 | **1.1.5** | Pure + `bit` | `glob.match`, IPv4 `net.cidr_*` |
+| 6 | **2.1.1** | Pure LuaJIT | `urlquery.*`, `base64.*`, `hex.*` |
+| 7 | **2.1.2** | Pure + `cjson` | `json.unmarshal` / `is_valid` / `marshal` |
+| 8 | **2.1.3** | Pure LuaJIT | `uri.*`, string extras |
+| 9 | **1.2** | OpenResty | `regex.*` via `ngx.re` |
+| 10 | **2.2** | OpenResty | optional base64/uri overrides |
+| 11 | **3.1 / 3.2** | As needed | time pure; JWT verify / crypto on OpenResty |
 
 ```text
-Step 1 CI (this repo):   Tier 1.1 → 2.1   [regex optional/stub]
-Step 2 product:          + Tier 1.2 (regex) → 2.2 → 3.x
+Step 1 CI:   1.1.1 → 1.1.2 → 1.1.3 → 1.1.4 → 1.1.5 → 2.1.1 → 2.1.2 → 2.1.3
+Step 2:      + 1.2 (regex) → 2.2 → 3.x
 ```
 
 ### Minimal deps per step
 
 ```text
 Step 1 (develop / prove):
-  bit.* (LuaJIT)     — IPv4 CIDR
-  cjson              — json.*  (already in harness)
-  pure Lua           — everything else in 1.1 / 2.1
+  pure Lua           — 1.1.1–1.1.4, 2.1.1, 2.1.3
+  bit.* (LuaJIT)     — 1.1.5 CIDR
+  cjson              — 2.1.2 json.*
 
 Step 2 (OpenResty product):
-  + ngx.re           — regex.*
-  + resty.openssl    — crypto (if Tier 3)
-  + resty.jwt        — JWT verify (if Tier 3)
-  optional ngx.base64 / ngx.now overrides
+  + ngx.re           — 1.2 regex.*
+  + resty.openssl    — 3.2 crypto (if needed)
+  + resty.jwt        — 3.2 JWT verify (if needed)
 ```
 
 ---
@@ -318,11 +367,11 @@ Step 2 (OpenResty product):
 
 ```text
 runtime/
-  core/              # 1.1 / 2.1 / 3.1 — portable semantics
+  core/              # 1.1.x / 2.1.x / 3.1 — portable semantics
   builtins/          # Rego names → core + backend
   backend/
     pure.lua         # Step 1
-    openresty.lua    # Step 2
+    openresty.lua    # Step 2 (1.2, 2.2, 3.2)
 ```
 
 See also: [`rego-builtins-waf.md`](./rego-builtins-waf.md), [`ir2lua-guide.md`](./ir2lua-guide.md), `AGENTS.md`, full catalog [`rego-builtins.md`](./rego-builtins.md).

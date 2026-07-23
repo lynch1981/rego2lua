@@ -339,6 +339,6 @@ For this repo’s IR → Lua path, unlock tests roughly in this order:
 6. `urlquery.*` / `base64.*` / `json.unmarshal`  
 7. Everything else as needed by product rules  
 
-Runtime split **Tier N.1 (pure Lua)** / **Tier N.2 (OpenResty)**: [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md).
+Runtime split **Tier N.1.x (pure Lua slices)** / **Tier N.2 (OpenResty)**: [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md).
 
 See also: project goal in `AGENTS.md` and implementation notes in the IR guide.
