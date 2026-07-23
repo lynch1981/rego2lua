@@ -41,6 +41,10 @@ Optional background only (not the production pipeline):
 - `docs/learning-tokenize.md` — Rego lexer (learning)
 - `docs/learning-ast.md` — AST / recursive descent (learning)
 
+## Documentation
+
+When adding or editing docs (`docs/*`, `README.md`, `AGENTS.md`), **check existing docs first and resolve conflicts** before committing. New text must not contradict this file, `docs/ir2lua-guide.md`, or other `docs/*` on pipeline, runtime, module API, tests, or scope. Prefer linking to an existing doc over restating the same fact in different words.
+
 ## Target runtime
 
 Generated Lua must run on **LuaJIT 2.1** (OpenResty; Lua **5.1** language level + LuaJIT extensions).
