@@ -86,6 +86,8 @@ Official docs and Go types:
 - https://www.openpolicyagent.org/docs/ir  
 - https://github.com/open-policy-agent/opa/tree/main/v1/ir  
 
+In-repo learning path (walked plans + stmt catalog): **[rego-ir-by-example/](./rego-ir-by-example/)**.
+
 ---
 
 ## 3. IR shape (what you will walk)
@@ -578,6 +580,7 @@ python -m rego2lua compile plan.json -o policy.lua
 | Doc | Role |
 |-----|------|
 | **This guide** | Production backend: **OPA IR → Lua** (shape, worked example, codegen plan) |
+| [`rego-ir-by-example/`](./rego-ir-by-example/) | IR learning path: execution model, control flow, runnable plans, stmt catalog |
 | `rego-builtins.md` | Full OPA built-in catalog (reference; not day-one backlog) |
 | `rego-builtins-waf.md` | WAF product subset — which builtins rule authors need |
 | `rego-builtins-waf-runtime.md` | How to implement WAF builtins (pure LuaJIT → OpenResty backends) |
@@ -599,6 +602,7 @@ python -m rego2lua compile plan.json -o policy.lua
 - IR Go package: https://github.com/open-policy-agent/opa/tree/main/v1/ir  
 - Plan JSON Schema: https://openpolicyagent.org/schemas/ir/v1/plan.schema.json  
 - OPA policy test suite (conformance inspiration): https://github.com/open-policy-agent/opa/tree/main/v1/test/cases  
+- In-repo IR by example: [rego-ir-by-example/](./rego-ir-by-example/)  
 
 ---
 

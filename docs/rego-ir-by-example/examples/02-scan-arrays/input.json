@@ -1,0 +1,7 @@
+{
+  "names": ["bob", "alice"],
+  "messages": [
+    {"level": "info", "text": "ok"},
+    {"level": "error", "text": "disk full"}
+  ]
+}

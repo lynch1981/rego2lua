@@ -29,12 +29,16 @@ Primary design doc: **`docs/ir2lua-guide.md`**.
 
 | Layer | Goal | Docs |
 |-------|------|------|
-| **1. IR → Lua** | Green `t/*.t` / `./go`; statement coverage | `docs/ir2lua-guide.md` |
+| **1. IR → Lua** | Green `t/*.t` / `./go`; statement coverage | `docs/ir2lua-guide.md`, `docs/rego-ir-by-example/` |
 | **2. WAF builtins** | Product rule surface (after core IR) | `docs/rego-builtins-waf.md` (what), `docs/rego-builtins-waf-runtime.md` (how / pure vs OpenResty) |
 | **3. Full catalog** | Lookup only; not a backlog | `docs/rego-builtins.md` |
 | **Learning** | Optional compiler study | `docs/learning-tokenize.md`, `docs/learning-ast.md` |
 
 Do **not** treat WAF “implement first” lists as the IR test order, or learning lexer/parser notes as production work. Usage order ≠ implement order for some builtins (e.g. `regex.*` is product-early, CI-late).
+
+IR learning path (stories + runnable `plan.json` examples; complements the official IR docs):
+
+- **`docs/rego-ir-by-example/`** — execution model, control flow, spine walk, stmt catalog
 
 Optional background only (not the production pipeline):
 
@@ -123,6 +127,7 @@ return foo
 | Path | Role |
 |------|------|
 | `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua) |
+| `docs/rego-ir-by-example/` | IR by example: plans, stmt catalog, Lua sketches |
 | `docs/rego-builtins.md` | Full OPA built-in catalog (reference) |
 | `docs/rego-builtins-waf.md` | WAF product subset (usage tiers) |
 | `docs/rego-builtins-waf-runtime.md` | WAF runtime implement order (pure Lua → OpenResty) |
