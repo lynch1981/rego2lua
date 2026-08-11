@@ -30,11 +30,11 @@ Primary design doc: **`docs/ir2lua-guide.md`**.
 | Layer | Goal | Docs |
 |-------|------|------|
 | **1. IR → Lua** | Green `t/*.t` / `./go`; statement coverage | `docs/ir2lua-guide.md`, `docs/rego-ir-by-example/` |
-| **2. WAF builtins** | Product rule surface (after core IR) | `docs/rego-builtins-priority.md` (what), `docs/rego-builtins-runtime.md` (how / pure vs OpenResty) |
+| **2. Builtins** | Product surface after core IR | `docs/rego-builtins-priority.md` (Need × Cost → P0–P3), `docs/rego-builtins-runtime.md` (implement plan) |
 | **3. Full catalog** | Lookup only; not a backlog | `docs/rego-builtins.md` |
 | **Learning** | Optional compiler study | `docs/learning-tokenize.md`, `docs/learning-ast.md` |
 
-Do **not** treat WAF “implement first” lists as the IR test order, or learning lexer/parser notes as production work. Usage order ≠ implement order for some builtins (e.g. `regex.*` is product-early, CI-late).
+Do **not** treat builtins P0–P3 as the IR test order, or learning lexer/parser notes as production work. Need × Cost priority ≠ pure-Lua CI order for some builtins (e.g. `regex.*` is P2 / Platform — product-important, CI after pure slices).
 
 IR learning path (stories + runnable `plan.json` examples; complements the official IR docs):
 
@@ -129,8 +129,8 @@ return foo
 | `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua) |
 | `docs/rego-ir-by-example/` | IR by example: plans, stmt catalog, Lua sketches |
 | `docs/rego-builtins.md` | Full OPA built-in catalog (reference) |
-| `docs/rego-builtins-priority.md` | WAF product subset (usage tiers) |
-| `docs/rego-builtins-runtime.md` | WAF runtime implement order (pure Lua → OpenResty) |
+| `docs/rego-builtins-priority.md` | Builtins priority (Need × Cost → P0–P3) |
+| `docs/rego-builtins-runtime.md` | Builtins implement plan (pure Lua → OpenResty) |
 | `docs/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
 | `t/*.t` | Behavioral regression tests |
 | `t/Rego.pm` | Harness: get Lua → run under LuaJIT → compare `--- out` |

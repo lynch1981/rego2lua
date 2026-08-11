@@ -4,10 +4,11 @@ Implementer companion to [`rego-builtins-priority.md`](./rego-builtins-priority.
 
 | Doc | Audience | Content |
 | --- | --- | --- |
-| [`rego-builtins-priority.md`](./rego-builtins-priority.md) | Product / rule authors | Which funcs WAF needs, **usage** tiers |
+| [`rego-builtins-priority.md`](./rego-builtins-priority.md) | Project priority | **Need × Cost → P0–P3** (what we care about) |
 | **This file** | Runtime implementers | **How** to implement: pure Lua first, OpenResty adapters second |
 
-**Difficulty scale:** Easy · Medium · Hard · Very hard
+**Difficulty / cost scale:** Easy · Medium · Hard · Platform · Very hard  
+(aligned with [`rego-builtins-priority.md`](./rego-builtins-priority.md))
 
 ---
 
@@ -36,26 +37,32 @@ plan.json  ──►  rego2lua  ──►  portable Lua module
 2. Platform builtins go through a small **backend** interface (`regex_match`, `base64_decode`, …).
 3. Step 1 is the default CI bar. Step 2 only adds adapters + request wiring.
 
-Product **usage** tiers (Tier 1 / 2 / 3) still come from [`rego-builtins-priority.md`](./rego-builtins-priority.md). **Usage order ≠ implement order:** e.g. `regex.match` is Tier 1 for rule authors but **Tier 1.2** here (OpenResty) — ship pure slices first so `prove t/*.t` stays nginx-free. This file splits each usage tier into pure-Lua slices (**\*.1.x**) and OpenResty (**\*.2**):
+**Need × Cost → P0–P3** lives in [`rego-builtins-priority.md`](./rego-builtins-priority.md). This file is the **implement plan**: pure slices first so `prove t/*.t` stays nginx-free, then platform backends. Map:
 
 ```text
-Tier 1  (use constantly)
-  1.1.1  pure — compare, types, numbers
-  1.1.2  pure — object.*
-  1.1.3  pure — strings
-  1.1.4  pure — collections, scan, sets
-  1.1.5  pure — glob + CIDR
-  1.2    OpenResty — regex
+P0  →  1.1.1–1.1.3 (+ basic not)     pure — cmp, types, strings, object/array basics
+P1  →  1.1.4–1.1.5, 2.1.1–2.1.2     pure — scan/sets, glob/cidr, encoding, json
+P2  →  1.2, 2.1.3, (+ net extras)    OpenResty regex + uri/string extras
+P3  →  3.1 / 3.2                     time pure; jwt verify / crypto on OpenResty
+```
 
-Tier 2  (encoding / body)
-  2.1.1  pure — base64 / hex / urlquery
-  2.1.2  pure + cjson — json
-  2.1.3  pure — uri + string extras
-  2.2    OpenResty — optional platform overrides
+Slice tree (CI / layout ids — not the same as P-bands):
 
-Tier 3  (auth / time / crypto)
-  3.1    pure — jwt decode, time parse, units, trace
-  3.2    OpenResty — jwt verify, crypto
+```text
+1.1.1  pure — compare, types, numbers
+1.1.2  pure — object.*
+1.1.3  pure — strings
+1.1.4  pure — collections, scan, sets
+1.1.5  pure — glob + CIDR
+1.2    OpenResty — regex          # priority P2 (High + Platform)
+
+2.1.1  pure — base64 / hex / urlquery
+2.1.2  pure + cjson — json
+2.1.3  pure — uri + string extras
+2.2    OpenResty — optional platform overrides
+
+3.1    pure — jwt decode, time parse, units, trace
+3.2    OpenResty — jwt verify, crypto
 ```
 
 ---
@@ -328,7 +335,7 @@ Skip pure crypto / JWT **verify** — use **3.2**.
 
 ## Build order summary
 
-This table is **implement / CI order**, not product “need these in rules first.” WAF authors want `regex.*` early ([`rego-builtins-priority.md`](./rego-builtins-priority.md)); we still implement it as **1.2** after pure slices so Step 1 CI needs no nginx.
+This table is **implement / CI order**. Canonical **P0–P3** (Need × Cost) is in [`rego-builtins-priority.md`](./rego-builtins-priority.md). `regex.*` is **P2** (High + Platform): product-important, but **1.2** here after pure slices so Step 1 CI needs no nginx.
 
 | Order | Tier | Where | What |
 | --- | ---: | --- | --- |
