@@ -1,10 +1,10 @@
 # WAF Built-ins: Runtime Tiers (Pure Lua → OpenResty)
 
-Implementer companion to [`rego-builtins-waf.md`](./rego-builtins-waf.md).
+Implementer companion to [`rego-builtins-priority.md`](./rego-builtins-priority.md).
 
 | Doc | Audience | Content |
 | --- | --- | --- |
-| [`rego-builtins-waf.md`](./rego-builtins-waf.md) | Product / rule authors | Which funcs WAF needs, **usage** tiers |
+| [`rego-builtins-priority.md`](./rego-builtins-priority.md) | Product / rule authors | Which funcs WAF needs, **usage** tiers |
 | **This file** | Runtime implementers | **How** to implement: pure Lua first, OpenResty adapters second |
 
 **Difficulty scale:** Easy · Medium · Hard · Very hard
@@ -36,7 +36,7 @@ plan.json  ──►  rego2lua  ──►  portable Lua module
 2. Platform builtins go through a small **backend** interface (`regex_match`, `base64_decode`, …).
 3. Step 1 is the default CI bar. Step 2 only adds adapters + request wiring.
 
-Product **usage** tiers (Tier 1 / 2 / 3) still come from [`rego-builtins-waf.md`](./rego-builtins-waf.md). **Usage order ≠ implement order:** e.g. `regex.match` is Tier 1 for rule authors but **Tier 1.2** here (OpenResty) — ship pure slices first so `prove t/*.t` stays nginx-free. This file splits each usage tier into pure-Lua slices (**\*.1.x**) and OpenResty (**\*.2**):
+Product **usage** tiers (Tier 1 / 2 / 3) still come from [`rego-builtins-priority.md`](./rego-builtins-priority.md). **Usage order ≠ implement order:** e.g. `regex.match` is Tier 1 for rule authors but **Tier 1.2** here (OpenResty) — ship pure slices first so `prove t/*.t` stays nginx-free. This file splits each usage tier into pure-Lua slices (**\*.1.x**) and OpenResty (**\*.2**):
 
 ```text
 Tier 1  (use constantly)
@@ -328,7 +328,7 @@ Skip pure crypto / JWT **verify** — use **3.2**.
 
 ## Build order summary
 
-This table is **implement / CI order**, not product “need these in rules first.” WAF authors want `regex.*` early ([`rego-builtins-waf.md`](./rego-builtins-waf.md)); we still implement it as **1.2** after pure slices so Step 1 CI needs no nginx.
+This table is **implement / CI order**, not product “need these in rules first.” WAF authors want `regex.*` early ([`rego-builtins-priority.md`](./rego-builtins-priority.md)); we still implement it as **1.2** after pure slices so Step 1 CI needs no nginx.
 
 | Order | Tier | Where | What |
 | --- | ---: | --- | --- |
@@ -376,4 +376,4 @@ runtime/
     openresty.lua    # Step 2 (1.2, 2.2, 3.2)
 ```
 
-See also: [`rego-builtins-waf.md`](./rego-builtins-waf.md), [`ir2lua-guide.md`](./ir2lua-guide.md), `AGENTS.md`, full catalog [`rego-builtins.md`](./rego-builtins.md).
+See also: [`rego-builtins-priority.md`](./rego-builtins-priority.md), [`ir2lua-guide.md`](./ir2lua-guide.md), `AGENTS.md`, full catalog [`rego-builtins.md`](./rego-builtins.md).

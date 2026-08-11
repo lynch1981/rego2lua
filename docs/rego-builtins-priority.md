@@ -1,4 +1,4 @@
-# Rego Built-ins for WAF Custom Rules
+# Rego Built-ins Priority
 
 A **practical subset** of OPA Rego built-ins for Web Application Firewall user custom rules.
 
