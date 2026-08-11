@@ -582,8 +582,8 @@ python -m rego2lua compile plan.json -o policy.lua
 | **This guide** | Production backend: **OPA IR → Lua** (shape, worked example, codegen plan) |
 | [`rego-ir-by-example/`](./rego-ir-by-example/) | IR learning path: execution model, control flow, runnable plans, stmt catalog |
 | `rego-builtins.md` | Full OPA built-in catalog (reference; not day-one backlog) |
-| `rego-builtins-waf.md` | WAF product subset — which builtins rule authors need |
-| `rego-builtins-waf-runtime.md` | How to implement WAF builtins (pure LuaJIT → OpenResty backends) |
+| `rego-builtins-priority.md` | WAF product subset — which builtins rule authors need |
+| `rego-builtins-runtime.md` | How to implement WAF builtins (pure LuaJIT → OpenResty backends) |
 | `learning-tokenize.md` | Educational Rego lexer (not required if OPA is frontend) |
 | `learning-ast.md` | Educational AST / recursive descent |
 | `README.md` / `t/*.t` / `AGENTS.md` | Behavioral contract, module API, agent priorities |
@@ -591,7 +591,7 @@ python -m rego2lua compile plan.json -o policy.lua
 **Layers of work**
 
 1. **This guide + `t/*.t`** — IR statements and minimal runtime until `./go` is green on the IR path.  
-2. **WAF builtins** — after (1); product surface in `rego-builtins-waf.md`, implement/CI order in `rego-builtins-waf-runtime.md` (usage order ≠ implement order; e.g. `regex.*` is OpenResty Tier 1.2).  
+2. **WAF builtins** — after (1); product surface in `rego-builtins-priority.md`, implement/CI order in `rego-builtins-runtime.md` (usage order ≠ implement order; e.g. `regex.*` is OpenResty Tier 1.2).  
 3. **Learning notes** — optional; do not rebuild OPA’s frontend.
 
 ---

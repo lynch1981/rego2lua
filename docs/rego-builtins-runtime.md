@@ -1,4 +1,4 @@
-# WAF Built-ins: Runtime Tiers (Pure Lua → OpenResty)
+# Rego Built-ins Runtime (Pure Lua → OpenResty)
 
 Implementer companion to [`rego-builtins-priority.md`](./rego-builtins-priority.md).
 

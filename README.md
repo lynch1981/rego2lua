@@ -16,15 +16,15 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 |-----|--------|
 | [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md) | **Backend plan:** OPA IR (JSON) → Lua |
 | [`docs/rego-builtins.md`](docs/rego-builtins.md) | Full OPA Rego built-in catalog (reference) |
-| [`docs/rego-builtins-waf.md`](docs/rego-builtins-waf.md) | WAF product subset — which builtins rule authors need |
-| [`docs/rego-builtins-waf-runtime.md`](docs/rego-builtins-waf-runtime.md) | How to implement those builtins (pure Lua → OpenResty) |
+| [`docs/rego-builtins-priority.md`](docs/rego-builtins-priority.md) | WAF product subset — which builtins rule authors need |
+| [`docs/rego-builtins-runtime.md`](docs/rego-builtins-runtime.md) | How to implement those builtins (pure Lua → OpenResty) |
 | [`docs/learning-tokenize.md`](docs/learning-tokenize.md) | Rego lexer / tokens (**learning only**) |
 | [`docs/learning-ast.md`](docs/learning-ast.md) | AST + recursive-descent (**learning only**) |
 
 **Layers of work** (do not mix priorities):
 
 1. **IR → Lua for current tests** — unlock `t/*.t` / `./go` (see IR guide + `AGENTS.md`).
-2. **WAF runtime builtins** — after core IR works; usage in `rego-builtins-waf.md`, implement order in `rego-builtins-waf-runtime.md` (usage order ≠ CI order).
+2. **WAF runtime builtins** — after core IR works; usage in `rego-builtins-priority.md`, implement order in `rego-builtins-runtime.md` (usage order ≠ CI order).
 3. **Learning notes** — optional; not the production pipeline.
 
 ## Test cases (`t/*.t`)

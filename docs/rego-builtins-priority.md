@@ -4,7 +4,7 @@ A **practical subset** of OPA Rego built-ins for Web Application Firewall user c
 
 Full catalog: [`rego-builtins.md`](./rego-builtins.md) · Official docs: [Rego Built-ins](https://www.openpolicyagent.org/docs/policy-reference/builtins)
 
-Implementers (pure Lua → OpenResty runtime tiers): [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md)
+Implementers (pure Lua → OpenResty runtime tiers): [`rego-builtins-runtime.md`](./rego-builtins-runtime.md)
 
 Typical WAF inputs look like:
 
@@ -240,7 +240,7 @@ Skip these unless product requirements demand them:
 
 ## Suggested starter set (implement first)
 
-If you only ship a **small runtime** (e.g. rego2lua for WAF), these are the **product** builtins to cover first (what rule authors need). **How/when** to implement them on pure LuaJIT vs OpenResty is in [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md) — notably **`regex.*` is product-early but CI-late** (OpenResty `ngx.re` backend; do not hand-roll in Step 1).
+If you only ship a **small runtime** (e.g. rego2lua for WAF), these are the **product** builtins to cover first (what rule authors need). **How/when** to implement them on pure LuaJIT vs OpenResty is in [`rego-builtins-runtime.md`](./rego-builtins-runtime.md) — notably **`regex.*` is product-early but CI-late** (OpenResty `ngx.re` backend; do not hand-roll in Step 1).
 
 ```text
 # compare
@@ -334,7 +334,7 @@ Two layers — do not mix them up:
 | Layer | What | Where |
 |-------|------|--------|
 | **IR / tests** | Unlock `t/*.t` (sanity → scalars → access → membership → cmp) | [`ir2lua-guide.md`](./ir2lua-guide.md), `AGENTS.md`, `./go` |
-| **WAF builtins** | Product rule surface after core IR works | This file (usage) + [`rego-builtins-waf-runtime.md`](./rego-builtins-waf-runtime.md) (build order) |
+| **WAF builtins** | Product rule surface after core IR works | This file (usage) + [`rego-builtins-runtime.md`](./rego-builtins-runtime.md) (build order) |
 
 **Product usage order** (what WAF rules need), not CI order:
 

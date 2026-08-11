@@ -30,7 +30,7 @@ Primary design doc: **`docs/ir2lua-guide.md`**.
 | Layer | Goal | Docs |
 |-------|------|------|
 | **1. IR → Lua** | Green `t/*.t` / `./go`; statement coverage | `docs/ir2lua-guide.md`, `docs/rego-ir-by-example/` |
-| **2. WAF builtins** | Product rule surface (after core IR) | `docs/rego-builtins-waf.md` (what), `docs/rego-builtins-waf-runtime.md` (how / pure vs OpenResty) |
+| **2. WAF builtins** | Product rule surface (after core IR) | `docs/rego-builtins-priority.md` (what), `docs/rego-builtins-runtime.md` (how / pure vs OpenResty) |
 | **3. Full catalog** | Lookup only; not a backlog | `docs/rego-builtins.md` |
 | **Learning** | Optional compiler study | `docs/learning-tokenize.md`, `docs/learning-ast.md` |
 
@@ -129,8 +129,8 @@ return foo
 | `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua) |
 | `docs/rego-ir-by-example/` | IR by example: plans, stmt catalog, Lua sketches |
 | `docs/rego-builtins.md` | Full OPA built-in catalog (reference) |
-| `docs/rego-builtins-waf.md` | WAF product subset (usage tiers) |
-| `docs/rego-builtins-waf-runtime.md` | WAF runtime implement order (pure Lua → OpenResty) |
+| `docs/rego-builtins-priority.md` | WAF product subset (usage tiers) |
+| `docs/rego-builtins-runtime.md` | WAF runtime implement order (pure Lua → OpenResty) |
 | `docs/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
 | `t/*.t` | Behavioral regression tests |
 | `t/Rego.pm` | Harness: get Lua → run under LuaJIT → compare `--- out` |
