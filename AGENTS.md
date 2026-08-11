@@ -85,9 +85,10 @@ Do **not** rewrite existing history to retrofit this style unless the user expli
 
 1. Obtain IR: `opa build -t plan -e <entrypoint> <policy.rego>` → `plan.json`.
 2. Translate IR → Lua (Python is the intended backend language; see the IR guide).
-3. Ship a small **Lua runtime** for Rego semantics Lua tables lack (undefined, sets, `not`, scan, …).
+3. Ship a small **Lua runtime** for Rego semantics Lua tables lack (undefined, sets, `not`, scan, …).  
+   **Started:** `runtime/rego_rt.lua` (slice **1.1.1** — compare/types/numbers). See `docs/ir2lua-guide.md` §8.
 4. Expose a stable **module API** (below) so tests and OpenResty callers look the same.
-5. Grow statement coverage in lockstep with `t/*.t` (start with `sanity.t`).
+5. Grow statement coverage in lockstep with `t/*.t` (runtime unit tests first, then `sanity.t`).
 
 Do **not** spend effort re-building OPA’s lexer/parser unless the project explicitly pivots.
 
@@ -113,26 +114,37 @@ Bootstrap `--- ref_lua` fixtures may omit the `data` parameter when unused; that
 -- default allow := false
 -- allow if { input.method == "GET" }
 
+local rt = require("rego_rt")   -- shared runtime (path setup TBD)
 local foo = {}
 
 function foo.allow(input, data)
+  input = input or {}
+  data  = data or {}
+  local allow = false
+  local method = rt.dot(input, "method")
+  if rt.is_def(method) and rt.values_equal(method, "GET") then
+    allow = true
+  end
   return allow
 end
 
 return foo
 ```
 
+Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`). Runtime API: `docs/ir2lua-guide.md` §8.
 ## Repo layout
 
 | Path | Role |
 |------|------|
-| `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua) |
+| `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua); §8 = runtime |
 | `docs/rego-ir-by-example/` | IR by example: plans, stmt catalog, Lua sketches |
 | `docs/rego-builtins.md` | Full OPA built-in catalog (reference) |
 | `docs/rego-builtins-priority.md` | Builtins priority (Need × Cost → P0–P3) |
-| `docs/rego-builtins-runtime.md` | Builtins implement plan (pure Lua → OpenResty) |
+| `docs/rego-builtins-runtime.md` | Builtins implement slices (pure Lua → OpenResty) |
 | `docs/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
-| `t/*.t` | Behavioral regression tests |
+| `runtime/rego_rt.lua` | Shared Lua runtime (UNDEF, compare, types, numbers, …) |
+| `t/runtime.t` | Runtime unit tests (LuaJIT TAP via `t/runtime_rt.lua`) |
+| `t/*.t` | Behavioral regression tests (policy fixtures) |
 | `t/Rego.pm` | Harness: get Lua → run under LuaJIT → compare `--- out` |
 | `t/eval_pkg.lua` | Call each exported rule; print JSON (`lua-cjson`) |
 | `opa/` | Local OPA plan examples / helpers (if present) |
@@ -165,8 +177,9 @@ Notes:
 ### Run
 
 ```bash
-prove t/sanity.t    # start here
-./go                # full suite, simple first
+prove t/runtime.t   # runtime unit tests
+prove t/sanity.t    # first policy suite
+./go                # full suite: runtime → language → compares
 ```
 
 Needs: `luajit`, `lua-cjson`, `opa` (for IR generation), Perl `Test::Base` (`libtest-base-perl`), `JSON::PP`.
@@ -175,6 +188,7 @@ Needs: `luajit`, `lua-cjson`, `opa` (for IR generation), Perl `Test::Base` (`lib
 
 | File | Covers |
 |------|--------|
+| `runtime.t` | `runtime/rego_rt.lua` unit tests (UNDEF, compare, types, numbers) |
 | `sanity.t` | `default`, field compare, AND, `not`, local `:=` |
 | `scalars.t` | string, number, boolean, null |
 | `access.t` | object `.`, array `[i]`, nested |

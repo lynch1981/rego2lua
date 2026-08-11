@@ -1,6 +1,7 @@
 #!/bin/sh
-# Sanity first, then language features, then comparison operators.
+# Runtime helpers first, then policy fixtures (sanity → features → compares).
 prove \
+  t/runtime.t \
   t/sanity.t \
   t/scalars.t \
   t/access.t \

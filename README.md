@@ -14,17 +14,19 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 
 | Doc | Topic |
 |-----|--------|
-| [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md) | **Backend plan:** OPA IR (JSON) → Lua |
+| [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md) | **Backend plan:** OPA IR (JSON) → Lua; §8 runtime API |
 | [`docs/rego-builtins.md`](docs/rego-builtins.md) | Full OPA Rego built-in catalog (reference) |
 | [`docs/rego-builtins-priority.md`](docs/rego-builtins-priority.md) | Which builtins we care about (Need × Cost → P0–P3) |
 | [`docs/rego-builtins-runtime.md`](docs/rego-builtins-runtime.md) | How to implement those builtins (pure Lua → OpenResty) |
 | [`docs/learning-tokenize.md`](docs/learning-tokenize.md) | Rego lexer / tokens (**learning only**) |
 | [`docs/learning-ast.md`](docs/learning-ast.md) | AST + recursive-descent (**learning only**) |
 
+**Runtime (in progress):** [`runtime/rego_rt.lua`](runtime/rego_rt.lua) — slice **1.1.1** (undefined, compare, types, numbers). Unit tests: `prove t/runtime.t`.
+
 **Layers of work** (do not mix priorities):
 
-1. **IR → Lua for current tests** — unlock `t/*.t` / `./go` (see IR guide + `AGENTS.md`).
-2. **Builtins** — after core IR works; priority (Need × Cost → P0–P3) in `rego-builtins-priority.md`, implement plan in `rego-builtins-runtime.md`.
+1. **Runtime + IR → Lua for current tests** — grow `runtime/rego_rt.lua`, unlock `t/*.t` / `./go` (see IR guide + `AGENTS.md`).
+2. **Builtins** — priority (P0–P3) in `rego-builtins-priority.md`, implement slices in `rego-builtins-runtime.md` (**1.1.1** done).
 3. **Learning notes** — optional; not the production pipeline.
 
 ## Test cases (`t/*.t`)
@@ -117,10 +119,13 @@ return cmp
 ### Run tests
 
 ```bash
-# one file (start here)
+# runtime unit tests (no policy)
+prove t/runtime.t
+
+# policy fixtures (start here after runtime)
 prove t/sanity.t
 
-# all suites, simple first
+# all suites: runtime first, then language / compares
 ./go
 ```
 

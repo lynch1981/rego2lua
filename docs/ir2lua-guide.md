@@ -487,10 +487,11 @@ Do **not** skip testing—the harness is ready; wire the compiler into it:
 2. Run IR→Lua → write temp module.  
 3. Existing `t/eval_pkg.lua` loads module, calls rules, compares to `--- out`.
 
-Bootstrap order (same as `./go` spirit):
+Bootstrap order (same as `./go`):
 
 | Order | Suite | Why |
 |-------|--------|-----|
+| 0 | `runtime.t` | Unit tests for `runtime/rego_rt.lua` (no policy) |
 | 1 | `sanity.t` | default, `==`, AND, `not`, `:=` |
 | 2 | `scalars.t` | null / bool / number / string |
 | 3 | `access.t` | `DotStmt`, indexing |
@@ -503,23 +504,89 @@ Until the binary exists, `t::Rego` still falls back to `--- ref_lua`.
 
 ## 8. Runtime helpers (Lua)
 
-Hand-written, shipped with every generated module (or a shared `rego_rt.lua` required by generated code).
+**Source of truth:** [`runtime/rego_rt.lua`](../runtime/rego_rt.lua)  
+**Unit tests:** `t/runtime.t` → `t/runtime_rt.lua` (`prove t/runtime.t` or `./go`)  
+**Builtin implement plan (slices):** [`rego-builtins-runtime.md`](./rego-builtins-runtime.md)
 
-Minimum ideas:
+Hand-written library. Generated modules `require` / `dofile` it (or codegen can later inline a frozen blob). Target: **LuaJIT 2.1** / OpenResty.
 
-```text
-rt.UNDEF
-rt.is_undef(x)
-rt.dot(obj, key)          -- DotStmt; undef if missing
-rt.eq(a, b) / rt.neq      -- with undef rules
-rt.make_set() / rt.set_add / rt.set_contains
-rt.not_block(fn)          -- NotStmt
-rt.scan(col, body_fn)     -- ScanStmt
-rt.with(doc, path, val, body_fn)
-rt.builtins["plus"] = ... -- as needed
+### Values: undefined ≠ null ≠ nil
+
+| Concept | Representation |
+|---------|----------------|
+| Rego **undefined** | `rt.UNDEF` (unique empty table; identity via `rawequal`) |
+| JSON / Rego **null** | `rt.NULL` (= `cjson.null` when available) |
+| Lua **nil** | missing key / absent Lua value — **not** Rego undefined |
+
+Frame invariant for codegen: every IR local slot is either `rt.UNDEF` or a Rego value. Do **not** leave bare `nil` in slots if you lower `IsDefinedStmt` with `rt.is_def` (today `is_def(nil)` is true because nil ≠ UNDEF).
+
+### Implemented (slice 1.1.1)
+
+| Area | API |
+|------|-----|
+| Definedness | `rt.UNDEF`, `rt.is_undef`, `rt.is_def` |
+| Null | `rt.NULL`, `rt.is_null` |
+| Field access | `rt.dot(source, key)` — missing / wrong type → `UNDEF` |
+| Compare | `rt.equal` / `rt.eq`, `rt.neq`, `rt.lt` / `rt.lte` / `rt.gt` / `rt.gte`, `rt.compare`, `rt.values_equal` |
+| Types | `rt.is_string` / `is_number` / `is_boolean` / `is_array` / `is_object` / `is_set`, `rt.type_name` |
+| Numbers | `rt.to_number`, `plus` / `minus` / `mul` / `div` / `rem`, `abs`, `numbers_range` |
+| Constructors | `rt.make_array`, `rt.make_object`, `rt.make_set` (metatable tags) |
+| CallStmt | `rt.builtins[name]`, `rt.call_builtin(name, ...)` |
+
+OPA plan IR names in `rt.builtins` include: `equal`, `neq`, `gt`, `gte`, `lt`, `lte`, `is_*`, `type_name`, `to_number`, `plus`, `minus`, `mul`, `div`, `rem`, `abs`, `numbers.range`.
+
+### Preferred generated Lua (AOT, clean)
+
+Prefer **named locals + `if`**, not IR register dumps. Use the runtime only where Lua lacks Rego semantics:
+
+```lua
+-- package foo
+-- default allow := false
+-- allow if { input.method == "GET" }
+
+local rt = require("rego_rt")   -- or dofile path in tests
+local foo = {}
+
+function foo.allow(input, data)
+  input = input or {}
+  data  = data or {}
+
+  local allow = false
+
+  local method = rt.dot(input, "method")
+  if rt.is_def(method) and rt.values_equal(method, "GET") then
+    allow = true
+  end
+
+  return allow
+end
+
+return foo
 ```
 
-**Undefined ≠ JSON null ≠ Lua nil.** Document the sentinel clearly; `cjson.null` is only for JSON null scalars (`scalars.t`).
+Register-style (`L[i]`, `goto`) is fine as a mental model of the plan IR ([`rego-ir-by-example/`](./rego-ir-by-example/)); it is **not** the readability target for shipped modules.
+
+### Not yet in the runtime (later slices)
+
+```text
+rt.not_block / scan / with     -- control helpers (NotStmt, ScanStmt, WithStmt)
+object.* string.* count in     -- 1.1.2–1.1.4
+set_add / set ops              -- 1.1.4 (make_set tag exists only)
+glob / net.cidr_*              -- 1.1.5
+regex.*                        -- 1.2 OpenResty
+```
+
+### Known gaps / intentional choices (fix or document before IR wiring)
+
+| Topic | Status |
+|-------|--------|
+| Array **Dot** index base | `rt.dot` uses the key as given; Rego is 0-based, Lua/cjson is 1-based — codegen or `dot` must remap for array indices |
+| Empty `[]` vs `{}` from cjson | Both decode as untagged `{}`; untagged empty is treated as **object**. Tag via `make_array` / decode wrapper for correct `is_array` |
+| `to_number` strings | Accepts JSON-number grammar; may be stricter than OPA `strconv.ParseFloat` on forms like `"+3"`, `"3."` |
+| Arithmetic errors | Type errors / div-by-zero / non-int `rem` → soft `UNDEF` (not OPA hard builtin errors) |
+| `minus` on sets | Numeric only until 1.1.4 |
+
+Details and follow-ups: [`rego-builtins-runtime.md`](./rego-builtins-runtime.md) slice **1.1.1**.
 
 ---
 
@@ -583,7 +650,7 @@ python -m rego2lua compile plan.json -o policy.lua
 | [`rego-ir-by-example/`](./rego-ir-by-example/) | IR learning path: execution model, control flow, runnable plans, stmt catalog |
 | `rego-builtins.md` | Full OPA built-in catalog (reference; not day-one backlog) |
 | `rego-builtins-priority.md` | Which builtins we care about (Need × Cost → P0–P3) |
-| `rego-builtins-runtime.md` | Builtins implement plan (pure LuaJIT → OpenResty backends) |
+| `rego-builtins-runtime.md` | Builtins implement slices (pure LuaJIT → OpenResty backends) |
 | `learning-tokenize.md` | Educational Rego lexer (not required if OPA is frontend) |
 | `learning-ast.md` | Educational AST / recursive descent |
 | `README.md` / `t/*.t` / `AGENTS.md` | Behavioral contract, module API, agent priorities |
@@ -608,10 +675,11 @@ python -m rego2lua compile plan.json -o policy.lua
 
 ## 14. Checklist
 
+- [x] Minimal runtime (slice **1.1.1**): `runtime/rego_rt.lua` + `t/runtime.t`  
 - [ ] Generate `plan.json` for `example.rego` / a `sanity` policy  
 - [ ] Load IR in Python; print plan names and stmt type histogram  
 - [ ] Hand-trace the §4 plan + func locals once  
-- [ ] Implement P0 statements + minimal runtime  
-- [ ] Emit `package` module API matching `ref_lua`  
+- [ ] Implement P0 IR statements (codegen) on top of the runtime  
+- [ ] Emit `package` module API matching product shape  
 - [ ] Green: first case of `t/sanity.t` via IR path  
 - [ ] Grow statement coverage until `./go` is IR-backed  
