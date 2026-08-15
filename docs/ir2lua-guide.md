@@ -491,7 +491,7 @@ Bootstrap order (same as `./go`):
 
 | Order | Suite | Why |
 |-------|--------|-----|
-| 0 | `runtime.t` | Unit tests for `runtime/rego_rt.lua` (no policy) |
+| 0 | `runtime.t` | Unit tests for `runtime/` (loads facade `rego_rt.lua`) |
 | 1 | `sanity.t` | default, `==`, AND, `not`, `:=` |
 | 2 | `scalars.t` | null / bool / number / string |
 | 3 | `access.t` | `DotStmt`, indexing |
@@ -504,11 +504,13 @@ Until the binary exists, `t::Rego` still falls back to `--- ref_lua`.
 
 ## 8. Runtime helpers (Lua)
 
-**Source of truth:** [`runtime/rego_rt.lua`](../runtime/rego_rt.lua)  
+**Codegen contract (must follow):** [`runtime/README.md` — Codegen contract](../runtime/README.md#codegen-contract)  
+**Source of truth:** [`runtime/`](../runtime/) — public entry [`runtime/rego_rt.lua`](../runtime/rego_rt.lua) (facade); layers in `value.lua`, `dot.lua`, `types.lua`, `compare.lua`, `numbers.lua`, `builtins.lua`.  
+**Beginner map:** [`runtime/README.md`](../runtime/README.md)  
 **Unit tests:** `t/runtime.t` → `t/runtime_rt.lua` (`prove t/runtime.t` or `./go`)  
 **Builtin implement plan (slices):** [`rego-builtins-runtime.md`](./rego-builtins-runtime.md)
 
-Hand-written library. Generated modules `require` / `dofile` it (or codegen can later inline a frozen blob). Target: **LuaJIT 2.1** / OpenResty.
+Hand-written library (split by layer for readability). Generated modules load only the facade (`require` / `dofile` `rego_rt.lua`). Target: **LuaJIT 2.1** / OpenResty.
 
 ### Values: undefined ≠ null ≠ nil
 
@@ -522,18 +524,27 @@ Frame invariant for codegen: every IR local slot is either `rt.UNDEF` or a Rego 
 
 ### Implemented (slice 1.1.1)
 
+**Public kernel** (IR stmts / control — call on `rt` directly):
+
 | Area | API |
 |------|-----|
 | Definedness | `rt.UNDEF`, `rt.is_undef`, `rt.is_def` |
-| Null | `rt.NULL`, `rt.is_null` |
-| Field access | `rt.dot(source, key)` — missing / wrong type → `UNDEF` |
-| Compare | `rt.equal` / `rt.eq`, `rt.neq`, `rt.lt` / `rt.lte` / `rt.gt` / `rt.gte`, `rt.compare`, `rt.values_equal` |
-| Types | `rt.is_string` / `is_number` / `is_boolean` / `is_array` / `is_object` / `is_set`, `rt.type_name` |
-| Numbers | `rt.to_number`, `plus` / `minus` / `mul` / `div` / `rem`, `abs`, `numbers_range` |
-| Constructors | `rt.make_array`, `rt.make_object`, `rt.make_set` (metatable tags) |
-| CallStmt | `rt.builtins[name]`, `rt.call_builtin(name, ...)` |
+| CallStmt boolean | `rt.is_ok(x)` — only exact `true`; UNDEF is truthy in Lua, do not `if call_builtin(...)` |
+| Null | `rt.NULL` |
+| DotStmt | `rt.dot(source, key)` — missing / wrong type → `UNDEF` |
+| EqualStmt | `rt.values_equal(a, b)` → boolean (`false` if either UNDEF) |
+| Constructors | `rt.make_array`, `rt.make_object`, `rt.make_set` |
 
-OPA plan IR names in `rt.builtins` include: `equal`, `neq`, `gt`, `gte`, `lt`, `lte`, `is_*`, `type_name`, `to_number`, `plus`, `minus`, `mul`, `div`, `rem`, `abs`, `numbers.range`.
+**CallStmt only** — named OPA builtins are **not** free-floating on `rt`; use:
+
+```lua
+rt.call_builtin("plus", a, b)
+rt.builtins["numbers.range"](1, 3)
+```
+
+Registered names (impl on `priv`, wired in `builtins.lua`): `equal`, `neq`, `gt`, `gte`, `lt`, `lte`, `is_*`, `type_name`, `to_number`, `plus`, `minus`, `mul`, `div`, `rem`, `abs`, `numbers.range`.
+
+See [`runtime/README.md`](../runtime/README.md) for the kernel vs CallStmt rule.
 
 ### Preferred generated Lua (AOT, clean)
 
@@ -616,7 +627,7 @@ python -m rego2lua compile plan.json -o policy.lua
 
 1. **Start with load + dump**: pretty-print plans/funcs from a real `plan.json` before generating Lua.  
 2. **One statement type per PR**; unlock one `.t` case at a time.  
-3. Keep runtime helpers in **one editable Lua blob**.  
+3. Keep runtime as **facade + layers** under `runtime/` (see `runtime/README.md`); public load path stays `rego_rt.lua`.  
 4. Prefer correctness over pretty Lua until `sanity.t` is green on IR path.  
 5. Log IR `type` on unknown statements; fail closed.  
 6. Use `--- ONLY` in `.t` files when debugging generated Lua dumps.  
@@ -675,7 +686,7 @@ python -m rego2lua compile plan.json -o policy.lua
 
 ## 14. Checklist
 
-- [x] Minimal runtime (slice **1.1.1**): `runtime/rego_rt.lua` + `t/runtime.t`  
+- [x] Minimal runtime (slice **1.1.1**): `runtime/` layers + `t/runtime.t`  
 - [ ] Generate `plan.json` for `example.rego` / a `sanity` policy  
 - [ ] Load IR in Python; print plan names and stmt type histogram  
 - [ ] Hand-trace the §4 plan + func locals once  

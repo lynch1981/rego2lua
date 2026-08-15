@@ -21,11 +21,11 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 | [`docs/learning-tokenize.md`](docs/learning-tokenize.md) | Rego lexer / tokens (**learning only**) |
 | [`docs/learning-ast.md`](docs/learning-ast.md) | AST + recursive-descent (**learning only**) |
 
-**Runtime (in progress):** [`runtime/rego_rt.lua`](runtime/rego_rt.lua) — slice **1.1.1** (undefined, compare, types, numbers). Unit tests: `prove t/runtime.t`.
+**Runtime (in progress):** [`runtime/`](runtime/) — slice **1.1.1** (undefined, compare, types, numbers). Entry: `rego_rt.lua`; layers explained in [`runtime/README.md`](runtime/README.md). Unit tests: `prove t/runtime.t`.
 
 **Layers of work** (do not mix priorities):
 
-1. **Runtime + IR → Lua for current tests** — grow `runtime/rego_rt.lua`, unlock `t/*.t` / `./go` (see IR guide + `AGENTS.md`).
+1. **Runtime + IR → Lua for current tests** — grow `runtime/` layers, unlock `t/*.t` / `./go` (see IR guide + `AGENTS.md`).
 2. **Builtins** — priority (P0–P3) in `rego-builtins-priority.md`, implement slices in `rego-builtins-runtime.md` (**1.1.1** done).
 3. **Learning notes** — optional; not the production pipeline.
 

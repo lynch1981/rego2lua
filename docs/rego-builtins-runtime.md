@@ -123,7 +123,7 @@ IR **field access** (`input.method`) is codegen + `rt.dot` (**1.1.1**), not `obj
 
 ### 1.1.1 — Compare, types, numbers
 
-**Status: done** — [`runtime/rego_rt.lua`](../runtime/rego_rt.lua) · `prove t/runtime.t` · codegen notes: [`ir2lua-guide.md` §8](./ir2lua-guide.md#8-runtime-helpers-lua).
+**Status: done** — [`runtime/`](../runtime/) · `prove t/runtime.t` · codegen notes: [`ir2lua-guide.md` §8](./ir2lua-guide.md#8-runtime-helpers-lua).
 
 What: compare, types, numbers; UNDEF / `dot` / `rt.builtins`.
 
@@ -261,24 +261,29 @@ Same names as pure; swap backend only (`ngx.decode_base64`, `ngx.unescape_uri`, 
 
 ## Layout
 
-**Today (1.1.1):**
+**Today (1.1.1)** — split by runtime layer; one public entry:
 
 ```text
-runtime/rego_rt.lua     # core + rt.builtins
+runtime/
+  README.md             # beginner map (read first)
+  rego_rt.lua           # facade: load layers, return rt
+  value.lua             # UNDEF, NULL, make_*, table_kind
+  dot.lua               # DotStmt
+  types.lua             # is_*, type_name
+  compare.lua           # equal / order
+  numbers.lua           # plus … numbers.range
+  builtins.lua          # CallStmt name table
 t/runtime.t             # prove entry
 t/runtime_rt.lua        # unit checks (TAP)
 ```
 
-**Later** (only if size or a second backend forces a split):
+**Later** (second backend / OpenResty):
 
 ```text
 runtime/
-  rego_rt.lua           # facade (optional)
-  core/                 # pure slices
-  builtins/             # name → core + backend
   backend/
     pure.lua
     openresty.lua
 ```
 
-See also: [`rego-builtins-priority.md`](./rego-builtins-priority.md), [`ir2lua-guide.md`](./ir2lua-guide.md) §8, `AGENTS.md`, catalog [`rego-builtins.md`](./rego-builtins.md).
+See also: [`runtime/README.md`](../runtime/README.md), [`rego-builtins-priority.md`](./rego-builtins-priority.md), [`ir2lua-guide.md`](./ir2lua-guide.md) §8, `AGENTS.md`, catalog [`rego-builtins.md`](./rego-builtins.md).

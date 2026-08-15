@@ -86,7 +86,7 @@ Do **not** rewrite existing history to retrofit this style unless the user expli
 1. Obtain IR: `opa build -t plan -e <entrypoint> <policy.rego>` → `plan.json`.
 2. Translate IR → Lua (Python is the intended backend language; see the IR guide).
 3. Ship a small **Lua runtime** for Rego semantics Lua tables lack (undefined, sets, `not`, scan, …).  
-   **Started:** `runtime/rego_rt.lua` (slice **1.1.1** — compare/types/numbers). See `docs/ir2lua-guide.md` §8.
+   **Started:** `runtime/` (slice **1.1.1** — compare/types/numbers; see `runtime/README.md`). See `docs/ir2lua-guide.md` §8.
 4. Expose a stable **module API** (below) so tests and OpenResty callers look the same.
 5. Grow statement coverage in lockstep with `t/*.t` (runtime unit tests first, then `sanity.t`).
 
@@ -131,7 +131,8 @@ end
 return foo
 ```
 
-Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`). Runtime API: `docs/ir2lua-guide.md` §8.
+Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`). Runtime **codegen contract:** [`runtime/README.md`](runtime/README.md#codegen-contract). Also `docs/ir2lua-guide.md` §8.
+
 ## Repo layout
 
 | Path | Role |
@@ -142,7 +143,7 @@ Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`)
 | `docs/rego-builtins-priority.md` | Builtins priority (Need × Cost → P0–P3) |
 | `docs/rego-builtins-runtime.md` | Builtins implement slices (pure Lua → OpenResty) |
 | `docs/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
-| `runtime/rego_rt.lua` | Shared Lua runtime (UNDEF, compare, types, numbers, …) |
+| `runtime/` | Shared Lua runtime (`rego_rt.lua` facade + layers). **Codegen contract:** `runtime/README.md` |
 | `t/runtime.t` | Runtime unit tests (LuaJIT TAP via `t/runtime_rt.lua`) |
 | `t/*.t` | Behavioral regression tests (policy fixtures) |
 | `t/Rego.pm` | Harness: get Lua → run under LuaJIT → compare `--- out` |
@@ -188,7 +189,7 @@ Needs: `luajit`, `lua-cjson`, `opa` (for IR generation), Perl `Test::Base` (`lib
 
 | File | Covers |
 |------|--------|
-| `runtime.t` | `runtime/rego_rt.lua` unit tests (UNDEF, compare, types, numbers) |
+| `runtime.t` | `runtime/` unit tests via facade (UNDEF, compare, types, numbers) |
 | `sanity.t` | `default`, field compare, AND, `not`, local `:=` |
 | `scalars.t` | string, number, boolean, null |
 | `access.t` | object `.`, array `[i]`, nested |
