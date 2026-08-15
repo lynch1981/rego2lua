@@ -47,7 +47,7 @@ Coverage from the runnable suite: **28 / 34** kinds (~**82%**). Missing are mark
 | **ArrayAppendStmt** | common | 02 | Append at end | `t[#t+1]=v` |
 | **MakeSetStmt** | common | 05 | Empty set | |
 | **SetAddStmt** | common | 05 | Add element | |
-| **MakeNullStmt** | rare | —* | `target:=null` | `L[t]=nil` |
+| **MakeNullStmt** | rare | —* | `target:=null` | `L[t]=rt.NULL` (not Lua `nil`) |
 | **MakeNumberIntStmt** | common | 06 | Number from int64 | |
 | **MakeNumberRefStmt** | common | 04,06 | Number from `static.strings[i]` | parse decimal text |
 | **ScanStmt** | must | 02 | Only loop; block per element | `for` key/value |
@@ -72,8 +72,11 @@ Coverage from the runnable suite: **28 / 34** kinds (~**82%**). Missing are mark
 | **05-sets** | + MakeSet, SetAdd, Not |
 | **06-len-unify** | + Len, IsArray, AssignInt, MakeNumberInt |
 | **07-with** | + With |
+| **08-multi-allow** | same spine stmts as 01; **no** `BlockStmt` (OR via top-level blocks) |
 
 ---
+
+Lua sketches in this tree are IR-shaped. Product codegen must follow [`runtime/README.md`](../../runtime/README.md#codegen-contract) (`rt.NULL` for null, never leave `nil` in slots).
 
 ## Must-implement checklist (Lua backend v1)
 

@@ -1,11 +1,8 @@
 # Example `06-len-unify`
 
-See the chapter in [`../../`](../../) matching this folder.
+Chapter: [`06-len-unify.md`](../../06-len-unify.md)
 
 ```bash
-# eval (adjust -i / -d as needed)
-opa eval -d policy.rego -i input.json 'data.example.allow' --format pretty 2>/dev/null || true
-
-# plan already generated as plan.json; rebuild with:
-# opa build -t plan -e <entrypoint> policy.rego [-d data.json]
+opa eval -d policy.rego -i input.json 'data.example.allow' --format pretty
+opa build -t plan -e example/allow policy.rego
 ```

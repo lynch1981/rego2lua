@@ -58,4 +58,5 @@ Always restore, even if the block fails (use `pcall` / `finally` style).
 
 ## Next
 
+`BlockStmt` / `BreakStmt` and multi-rule OR: [08-block-and-break.md](./08-block-and-break.md).  
 Full index: [99-stmt-catalog.md](./99-stmt-catalog.md)

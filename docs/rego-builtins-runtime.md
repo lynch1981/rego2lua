@@ -95,7 +95,7 @@ return {
 }
 ```
 
-OPA regex is **RE2 / Go**-style. `ngx.re` / PCRE is close for most WAF signatures but **not** bit-identical to OPA.
+OPA regex is **RE2 / Go**-style. `ngx.re` / PCRE is close for most request-policy signatures but **not** bit-identical to OPA.
 
 ---
 
@@ -131,7 +131,7 @@ What: compare, types, numbers; UNDEF / `dot` / `rt.builtins`.
 | --- | --- | --- | --- |
 | `equal` / `neq` | Easy | *(none)* | Deep eq; UNDEF args → UNDEF |
 | `gt` / `gte` / `lt` / `lte` | Easy | *(none)* | OPA type-rank order |
-| `is_string` / `is_number` / `is_array` / `is_object` / `is_boolean` / `is_null` | Easy | *(none)* | Array vs object: tags + heuristic |
+| `is_string` / `is_number` / `is_array` / `is_object` / `is_boolean` / `is_null` / `is_set` | Easy | *(none)* | Array vs object: tags + heuristic |
 | `type_name` | Easy | *(none)* | |
 | `to_number` | Easy | *(none)* | Invalid → UNDEF |
 | `plus` / `minus` / `mul` / `div` / `rem` | Easy | *(none)* | Soft UNDEF on type/zero errors |
@@ -140,9 +140,7 @@ What: compare, types, numbers; UNDEF / `dot` / `rt.builtins`.
 
 Also in **1.1.1** (IR helpers, not OPA builtins): `rt.UNDEF` / `is_undef` / `is_def`, `rt.NULL`, `rt.dot`, `make_array` / `make_object` / `make_set`, `rt.builtins` / `call_builtin`.
 
-**Language (codegen):** `:=` · `default` · basic `not` (later).
-
-**Follow-ups before IR wiring:** array Dot 0-based vs Lua 1-based; empty `[]` vs `{}` from cjson; `to_number` string parity with OPA.
+Runtime vs contract: [`runtime/README.md`](../runtime/README.md#runtime-vs-contract).
 
 ### 1.1.2 — Object helpers
 
@@ -251,7 +249,7 @@ Same names as pure; swap backend only (`ngx.decode_base64`, `ngx.unescape_uri`, 
 
 | Category | Why skip |
 | --- | --- |
-| GraphQL, `http.send`, DNS lookup | Side effects / not WAF core |
+| GraphQL, `http.send`, DNS lookup | Side effects / not typical request-policy core |
 | `net.cidr_expand`, graph walk | Prefer `cidr_contains` |
 | YAML, X.509 / mTLS suite | Edge / other layers |
 | `providers.aws.*`, `opa.runtime`, `rand.intn` | Meta / non-deterministic |

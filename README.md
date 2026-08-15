@@ -14,7 +14,8 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 
 | Doc | Topic |
 |-----|--------|
-| [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md) | **Backend plan:** OPA IR (JSON) → Lua; §8 runtime API |
+| [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md) | **Backend plan:** OPA IR (JSON) → Lua; §8 points at the runtime contract |
+| [`docs/rego-ir-by-example/`](docs/rego-ir-by-example/) | IR learning path: execution model, runnable plans, stmt catalog |
 | [`docs/rego-builtins.md`](docs/rego-builtins.md) | Full OPA Rego built-in catalog (reference) |
 | [`docs/rego-builtins-priority.md`](docs/rego-builtins-priority.md) | Which builtins we care about (Need × Cost → P0–P3) |
 | [`docs/rego-builtins-runtime.md`](docs/rego-builtins-runtime.md) | How to implement those builtins (pure Lua → OpenResty) |
@@ -25,9 +26,10 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 
 **Layers of work** (do not mix priorities):
 
-1. **Runtime + IR → Lua for current tests** — grow `runtime/` layers, unlock `t/*.t` / `./go` (see IR guide + `AGENTS.md`).
+1. **Runtime + IR → Lua for current tests** — grow `runtime/` layers, unlock `t/*.t` / `./go` (see IR guide, IR-by-example, `AGENTS.md`).
 2. **Builtins** — priority (P0–P3) in `rego-builtins-priority.md`, implement slices in `rego-builtins-runtime.md` (**1.1.1** done).
-3. **Learning notes** — optional; not the production pipeline.
+3. **Full catalog** — `rego-builtins.md` is lookup only, not a backlog.
+4. **Learning notes** — optional; not the production pipeline.
 
 ## Test cases (`t/*.t`)
 

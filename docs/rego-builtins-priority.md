@@ -150,7 +150,7 @@ units.parse_bytes  units.parse  trace
 
 # Low + Medium / rare
 strings.replace_n
-json.patch  json.match_schema  json.verify_schema
+json.patch
 ```
 
 ---
@@ -267,7 +267,7 @@ IR **field access** (`input.method`, nested paths) is codegen, not `object.*`.
 | `json.marshal` | `json.marshal(x)` | Med | Easy* | P1 | Serialize |
 | `json.filter` / `json.remove` | path helpers | Med | Medium | P2 | Shape body |
 | `json.patch` | `json.patch(target, patches)` | Low | Hard | P3 | Rare |
-| `json.match_schema` / `verify_schema` | schema | Low | Very hard | P3 | Defer |
+| `json.match_schema` / `verify_schema` | schema | Low | Very hard | out | Library only (matrix: Very hard) |
 | `uri.parse` / `uri.is_valid` | `uri.*(x)` | Med | Medium | P2 | Split / validate URL |
 
 ### Auth, time, crypto, units, debug
@@ -311,6 +311,7 @@ IR **field access** (`input.method`, nested paths) is codegen, not `object.*`.
 | `opa.runtime` / `rego.metadata.*` | Runtime meta |
 | `rand.intn` | Non-deterministic hurts auditability |
 | `semver.*` / `uuid.*` | Rare unless product requires |
+| `json.match_schema` / `json.verify_schema` | Very hard (full JSON Schema); library only |
 
 ---
 

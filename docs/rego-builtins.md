@@ -4,7 +4,7 @@ Catalog of built-in functions in the OPA Rego policy language.
 
 Source: [Rego Built-ins | Open Policy Agent](https://www.openpolicyagent.org/docs/policy-reference/builtins)
 
-There are roughly **187 built-ins** across **32 categories** in current OPA docs.
+Current OPA docs list **29** categories. This snapshot lists each named built-in (`minus` appears under both Numbers and Sets).
 
 Not all are available everywhere:
 
@@ -256,6 +256,7 @@ Some operators are dual-purpose (e.g. `minus` / `-` for numbers and sets). Membe
 | `strings.render_template` | `result := strings.render_template(value, vars)` |
 | `strings.replace_n` | `output := strings.replace_n(patterns, value)` |
 | `strings.reverse` | `y := strings.reverse(x)` |
+| `strings.split_n` | `ys := strings.split_n(x, delimiter, n)` |
 | `substring` | `output := substring(value, offset, length)` |
 | `trim` | `output := trim(value, cutset)` |
 | `trim_left` | `output := trim_left(value, cutset)` |

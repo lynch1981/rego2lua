@@ -147,6 +147,8 @@ function g0_data_example_allow(input, data)
 end
 ```
 
+Sketches here are IR-shaped (slots / `nil` for missing). Product codegen uses `rt.UNDEF` / `rt.NULL` / `rt.dot` — see [`runtime/README.md`](../../runtime/README.md#codegen-contract).
+
 ---
 
 ## Picture

@@ -113,6 +113,24 @@ Ignore `capacity` in Lua.
 
 ---
 
+## Empty source vs zero-trip loop
+
+Official IR: **`ScanStmt` is undefined** if `source` is a scalar **or an empty collection**. That ends the **containing** block — it is not `for` with zero iterations.
+
+Comprehensions still yield `[]` when the scanned collection is empty because the planner nests Scan in a **`BlockStmt`**. Empty-scan undefined only finishes that nested block; `MakeArray` / return in the outer block still run.
+
+```text
+MakeArrayStmt     Larr := []
+BlockStmt
+  ScanStmt        -- empty → undefined → leave this BlockStmt only
+    … filter + ArrayAppend …
+return Larr       -- still runs; Larr is []
+```
+
+A Lua `ipairs` loop is a reasonable *iteration* sketch, but do not lower Scan as “always continue after the loop” unless it is nested this way.
+
+---
+
 ## Important
 
 - **`ScanStmt` is the only iteration construct** in IR.

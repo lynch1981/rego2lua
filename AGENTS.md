@@ -114,7 +114,7 @@ Bootstrap `--- ref_lua` fixtures may omit the `data` parameter when unused; that
 -- default allow := false
 -- allow if { input.method == "GET" }
 
-local rt = require("rego_rt")   -- shared runtime (path setup TBD)
+local rt = require("rego_rt")   -- or loadfile("runtime/rego_rt.lua")()
 local foo = {}
 
 function foo.allow(input, data)

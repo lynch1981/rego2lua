@@ -55,15 +55,13 @@ Also: [`docs/ir2lua-guide.md`](../docs/ir2lua-guide.md) §8 · slices: [`docs/re
 | Kernel | `UNDEF`, `is_undef`, `is_def`, `is_ok`, `NULL`, `dot`, `values_equal`, `make_array` / `make_object` / `make_set` |
 | CallStmt | **`rt.call_builtin(name, …)` only** |
 
-Do not emit `rt.plus`, `rt.equal`, `rt.is_string`, etc. Do not `require` layer files. Do not use `priv`. Prefer `call_builtin` over `rt.builtins[name]`.
-
 ### Rules
 
 1. **Facade only** — one load path: `rego_rt.lua`.
 2. **Slots** — every IR local is `rt.UNDEF` or a Rego value. Do not leave Lua `nil` if you use `is_def` (`is_def(nil)` is true today).
 3. **UNDEF ≠ NULL ≠ nil** — missing path → `UNDEF`; JSON null → `rt.NULL`.
 4. **IR statement → kernel** — `DotStmt` → `rt.dot`; `EqualStmt` → `rt.values_equal`; `Make*` → `make_*`; definedness → `is_def` / `is_undef`.
-5. **CallStmt → `rt.call_builtin(name, …)`** — OPA names (`plus`, `equal`, `is_string`, `numbers.range`, …) only this way.
+5. **CallStmt → `rt.call_builtin(name, …)`** — OPA names (`plus`, `equal`, `is_string`, `numbers.range`, …) only this way. Prefer that over `rt.builtins[name]`.
 6. **Boolean CallStmt** — result is `true` \| `false` \| `UNDEF`. **Never** `if call_builtin(...)`. Use `rt.is_ok(...)`.
 7. **Value CallStmt** (`plus`, `to_number`, …) — check `is_undef` / `is_def` on the result. `is_ok` is only for exact `true`.
 8. **Fail closed** — unknown builtin or unknown stmt type → generate-time error (preferred) or runtime `UNDEF`. Do not invent APIs.
@@ -85,9 +83,6 @@ if rt.is_undef(sum) then goto fail end
 
 -- bad: UNDEF is a table (truthy)
 if rt.call_builtin("equal", a, b) then end
-
--- bad: free-floating builtin
-local x = rt.plus(a, b)
 ```
 
 ---
@@ -126,5 +121,31 @@ Then add a check in `t/runtime_rt.lua` and run `prove t/runtime.t`.
 
 ## Slice status
 
-**1.1.1** — undefined, DotStmt, compare, types, numbers (this tree).  
+**1.1.1** — undefined, DotStmt, compare, types (`is_*` including `is_set`), numbers (this tree).  
 Later slices add files or grow layers; keep the facade as the single entry.
+
+---
+
+## Later slices
+
+Not a 1.1.1 hole. Next work is in [`docs/rego-builtins-runtime.md`](../docs/rego-builtins-runtime.md):
+
+```text
+not / scan / with              -- control helpers (NotStmt, ScanStmt, WithStmt)
+object.* string.* count in     -- 1.1.2–1.1.4
+set_add / set ops              -- 1.1.4 (make_set tag exists only)
+glob / net.cidr_*              -- 1.1.5
+regex.*                        -- 1.2 OpenResty
+```
+
+## Runtime vs contract
+
+These are **runtime** mismatches with the codegen contract / Rego meaning. Do **not** work around them in the walker. Hand them to the runtime owner.
+
+| Topic | Contract / Rego | Runtime today |
+|-------|-----------------|---------------|
+| Array **Dot** index | `DotStmt` → `rt.dot`; Rego arrays are 0-based | `source[key]` as given; `0` misses a Lua/cjson 1-based array |
+| Empty JSON `[]` | `is_array` / `type_name` on `input` / `data` | cjson decodes `[]` and `{}` as the same untagged `{}`; empty is treated as **object** |
+| `to_number` strings | `call_builtin("to_number", x)` matches OPA | JSON-number grammar only; may reject OPA-accepted `"+3"`, `"3."` |
+
+`plus` / `div` / `rem` type and zero errors return `UNDEF`. That matches this contract (no throw). It is **not** OPA’s hard builtin error; change only if the product wants OPA error parity.

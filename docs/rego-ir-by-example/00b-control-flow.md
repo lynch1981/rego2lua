@@ -119,6 +119,8 @@ for each (key, value) in source:
 
 Not `BlockStmt`. Failed iteration ≠ end of function.
 
+The **ScanStmt itself** is undefined if `source` is a scalar or **empty** (official IR). That exits the *containing* block. Comprehensions nest Scan in a `BlockStmt` so empty input still returns `[]` — see [02-scan-and-arrays.md](./02-scan-and-arrays.md).
+
 ### `NotStmt`
 
 ```text

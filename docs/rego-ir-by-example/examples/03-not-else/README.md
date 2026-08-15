@@ -1,11 +1,9 @@
 # Example `03-not-else`
 
-See the chapter in [`../../`](../../) matching this folder.
+Chapter: [`03-not-and-else.md`](../../03-not-and-else.md)
 
 ```bash
-# eval (adjust -i / -d as needed)
-opa eval -d policy.rego -i input.json 'data.example.allow' --format pretty 2>/dev/null || true
-
-# plan already generated as plan.json; rebuild with:
-# opa build -t plan -e <entrypoint> policy.rego [-d data.json]
+opa eval -d policy.rego -i input.json 'data.example.allow' --format pretty
+opa eval -d policy.rego -i input.json 'data.example.role' --format pretty
+opa build -t plan -e example/allow -e example/role policy.rego
 ```

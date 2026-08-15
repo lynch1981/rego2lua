@@ -1,11 +1,8 @@
 # Example `01-spine-allow`
 
-See the chapter in [`../../`](../../) matching this folder.
+Chapter: [`01-spine-allow.md`](../../01-spine-allow.md)
 
 ```bash
-# eval (adjust -i / -d as needed)
-opa eval -d policy.rego -i input.json 'data.example.allow' --format pretty 2>/dev/null || true
-
-# plan already generated as plan.json; rebuild with:
-# opa build -t plan -e <entrypoint> policy.rego [-d data.json]
+opa eval -d policy.rego -i input.json 'data.example.allow' --format pretty
+opa build -t plan -e example/allow policy.rego
 ```

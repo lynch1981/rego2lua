@@ -67,7 +67,7 @@ Repo harness view:
 
 ### Produce IR with OPA
 
-OPA is already usable in this workspace (`opa/opa.run` style):
+OPA must be on `PATH` (`opa version`). There is no in-repo `opa/` wrapper.
 
 ```bash
 opa build -t plan -e example/allow example.rego -o bundle.tar.gz
@@ -422,14 +422,16 @@ translate_policy(plan) → lua_module_string
       translate_stmt(type, stmt)
 ```
 
-Start with a **tiny** subset that can satisfy `t/sanity.t` style policies:
+Start with a **tiny** subset that can satisfy `t/sanity.t` style policies (`default` + field compare):
 
-- locals / assign  
+- locals / `AssignVarStmt` / `AssignVarOnceStmt` / `ResetLocalStmt`  
 - `DotStmt` (field access)  
 - `EqualStmt` / `NotEqualStmt`  
+- `IsDefinedStmt` / `IsUndefinedStmt` (body vs `default`)  
 - constants (`MakeNullStmt`, numbers, `string_index`)  
 - `CallStmt` to policy functions  
-- early `ReturnLocalStmt` / result mapping  
+- `MakeObjectStmt` / `ObjectInsertStmt` / `ResultSetAddStmt` (plan entry; unwrap to the rule value)  
+- `ReturnLocalStmt`  
 
 ### Step 3 — Values: array, object, set
 
@@ -504,58 +506,20 @@ Until the binary exists, `t::Rego` still falls back to `--- ref_lua`.
 
 ## 8. Runtime helpers (Lua)
 
-**Codegen contract (must follow):** [`runtime/README.md` — Codegen contract](../runtime/README.md#codegen-contract)  
-**Source of truth:** [`runtime/`](../runtime/) — public entry [`runtime/rego_rt.lua`](../runtime/rego_rt.lua) (facade); layers in `value.lua`, `dot.lua`, `types.lua`, `compare.lua`, `numbers.lua`, `builtins.lua`.  
-**Beginner map:** [`runtime/README.md`](../runtime/README.md)  
-**Unit tests:** `t/runtime.t` → `t/runtime_rt.lua` (`prove t/runtime.t` or `./go`)  
-**Builtin implement plan (slices):** [`rego-builtins-runtime.md`](./rego-builtins-runtime.md)
+**Codegen contract (the law):** [`runtime/README.md` — Codegen contract](../runtime/README.md#codegen-contract). Do not restate those rules here.
 
-Hand-written library (split by layer for readability). Generated modules load only the facade (`require` / `dofile` `rego_rt.lua`). Target: **LuaJIT 2.1** / OpenResty.
-
-### Values: undefined ≠ null ≠ nil
-
-| Concept | Representation |
-|---------|----------------|
-| Rego **undefined** | `rt.UNDEF` (unique empty table; identity via `rawequal`) |
-| JSON / Rego **null** | `rt.NULL` (= `cjson.null` when available) |
-| Lua **nil** | missing key / absent Lua value — **not** Rego undefined |
-
-Frame invariant for codegen: every IR local slot is either `rt.UNDEF` or a Rego value. Do **not** leave bare `nil` in slots if you lower `IsDefinedStmt` with `rt.is_def` (today `is_def(nil)` is true because nil ≠ UNDEF).
-
-### Implemented (slice 1.1.1)
-
-**Public kernel** (IR stmts / control — call on `rt` directly):
-
-| Area | API |
-|------|-----|
-| Definedness | `rt.UNDEF`, `rt.is_undef`, `rt.is_def` |
-| CallStmt boolean | `rt.is_ok(x)` — only exact `true`; UNDEF is truthy in Lua, do not `if call_builtin(...)` |
-| Null | `rt.NULL` |
-| DotStmt | `rt.dot(source, key)` — missing / wrong type → `UNDEF` |
-| EqualStmt | `rt.values_equal(a, b)` → boolean (`false` if either UNDEF) |
-| Constructors | `rt.make_array`, `rt.make_object`, `rt.make_set` |
-
-**CallStmt only** — named OPA builtins are **not** free-floating on `rt`; use:
-
-```lua
-rt.call_builtin("plus", a, b)
-rt.builtins["numbers.range"](1, 3)
-```
-
-Registered names (impl on `priv`, wired in `builtins.lua`): `equal`, `neq`, `gt`, `gte`, `lt`, `lte`, `is_*`, `type_name`, `to_number`, `plus`, `minus`, `mul`, `div`, `rem`, `abs`, `numbers.range`.
-
-See [`runtime/README.md`](../runtime/README.md) for the kernel vs CallStmt rule.
+Hand-written library under [`runtime/`](../runtime/) (facade `rego_rt.lua` + layers). Target: **LuaJIT 2.1** / OpenResty. Tests: `prove t/runtime.t`. Slices: [`rego-builtins-runtime.md`](./rego-builtins-runtime.md).
 
 ### Preferred generated Lua (AOT, clean)
 
-Prefer **named locals + `if`**, not IR register dumps. Use the runtime only where Lua lacks Rego semantics:
+Prefer **named locals + `if`**, not IR register dumps. Emit only APIs listed in the contract:
 
 ```lua
 -- package foo
 -- default allow := false
 -- allow if { input.method == "GET" }
 
-local rt = require("rego_rt")   -- or dofile path in tests
+local rt = require("rego_rt")
 local foo = {}
 
 function foo.allow(input, data)
@@ -575,29 +539,9 @@ end
 return foo
 ```
 
-Register-style (`L[i]`, `goto`) is fine as a mental model of the plan IR ([`rego-ir-by-example/`](./rego-ir-by-example/)); it is **not** the readability target for shipped modules.
+Register-style (`L[i]`, `goto`) is a plan-IR mental model ([`rego-ir-by-example/`](./rego-ir-by-example/)), not the readability target.
 
-### Not yet in the runtime (later slices)
-
-```text
-rt.not_block / scan / with     -- control helpers (NotStmt, ScanStmt, WithStmt)
-object.* string.* count in     -- 1.1.2–1.1.4
-set_add / set ops              -- 1.1.4 (make_set tag exists only)
-glob / net.cidr_*              -- 1.1.5
-regex.*                        -- 1.2 OpenResty
-```
-
-### Known gaps / intentional choices (fix or document before IR wiring)
-
-| Topic | Status |
-|-------|--------|
-| Array **Dot** index base | `rt.dot` uses the key as given; Rego is 0-based, Lua/cjson is 1-based — codegen or `dot` must remap for array indices |
-| Empty `[]` vs `{}` from cjson | Both decode as untagged `{}`; untagged empty is treated as **object**. Tag via `make_array` / decode wrapper for correct `is_array` |
-| `to_number` strings | Accepts JSON-number grammar; may be stricter than OPA `strconv.ParseFloat` on forms like `"+3"`, `"3."` |
-| Arithmetic errors | Type errors / div-by-zero / non-int `rem` → soft `UNDEF` (not OPA hard builtin errors) |
-| `minus` on sets | Numeric only until 1.1.4 |
-
-Details and follow-ups: [`rego-builtins-runtime.md`](./rego-builtins-runtime.md) slice **1.1.1**.
+Later slices and runtime-vs-contract notes: [`runtime/README.md`](../runtime/README.md#later-slices). Slice map: [`rego-builtins-runtime.md`](./rego-builtins-runtime.md).
 
 ---
 
@@ -637,19 +581,22 @@ python -m rego2lua compile plan.json -o policy.lua
 
 ## 11. Mapping IR statements → early priority
 
-| Priority | IR `type` | Needed for |
+These ranks are **IR statement order** for codegen (unlock `t/*.t`). They are **not** builtin Need × Cost **P0–P3**.
+
+| Rank | IR `type` | Needed for |
 |----------|-----------|------------|
-| P0 | `AssignVarStmt`, `AssignVarOnceStmt`, `ResetLocalStmt` | locals |
-| P0 | `MakeNullStmt`, `MakeNumberIntStmt`, `MakeNumberRefStmt` | scalars |
-| P0 | `DotStmt` | `input.method` |
-| P0 | `EqualStmt`, `NotEqualStmt` | compares |
-| P0 | `CallStmt`, `ReturnLocalStmt` | funcs / entry |
-| P1 | `MakeObjectStmt`, `ObjectInsertStmt`, `MakeArrayStmt`, `ArrayAppendStmt` | structures |
-| P1 | `ResultSetAddStmt` | plan entrypoints (then unwrap to rule value) |
-| P1 | `NotStmt` | `not` |
-| P1 | `ScanStmt`, `Is*` checks | membership / iteration |
-| P2 | `MakeSetStmt`, `SetAddStmt` | sets |
-| P2 | `WithStmt`, `CallDynamicStmt`, builtins | advanced |
+| must | `AssignVarStmt`, `AssignVarOnceStmt`, `ResetLocalStmt` | locals / `default` |
+| must | `IsDefinedStmt`, `IsUndefinedStmt` | body vs `default` |
+| must | `MakeNullStmt`, `MakeNumberIntStmt`, `MakeNumberRefStmt` | scalars |
+| must | `DotStmt` | `input.method` |
+| must | `EqualStmt`, `NotEqualStmt` | compares |
+| must | `CallStmt`, `ReturnLocalStmt` | funcs |
+| must | `MakeObjectStmt`, `ObjectInsertStmt`, `ResultSetAddStmt` | plan entry (then unwrap to rule value) |
+| next | `MakeArrayStmt`, `ArrayAppendStmt` | arrays |
+| next | `NotStmt` | `not` |
+| next | `ScanStmt`, `IsArrayStmt` / other `Is*` | membership / iteration |
+| later | `MakeSetStmt`, `SetAddStmt` | sets |
+| later | `WithStmt`, `CallDynamicStmt`, more builtins | advanced |
 
 ---
 
@@ -690,7 +637,7 @@ python -m rego2lua compile plan.json -o policy.lua
 - [ ] Generate `plan.json` for `example.rego` / a `sanity` policy  
 - [ ] Load IR in Python; print plan names and stmt type histogram  
 - [ ] Hand-trace the §4 plan + func locals once  
-- [ ] Implement P0 IR statements (codegen) on top of the runtime  
+- [ ] Implement **must** IR statements (codegen) on top of the runtime  
 - [ ] Emit `package` module API matching product shape  
 - [ ] Green: first case of `t/sanity.t` via IR path  
 - [ ] Grow statement coverage until `./go` is IR-backed  
