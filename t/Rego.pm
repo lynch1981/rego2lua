@@ -8,6 +8,7 @@ use warnings;
 use Test::Base -Base;
 use Test::More;
 use File::Temp qw( tempdir );
+use File::Path qw( make_path );
 use File::Spec;
 use JSON::PP qw( decode_json encode_json );
 use File::Basename qw( dirname );
@@ -87,9 +88,10 @@ sub _run_block ($) {
     }
 
     # When --- ONLY is set (Test::Base already limited which blocks run),
-    # print the Lua under test for debugging.
+    # print the Lua under test and dump artifacts to tmp/ for re-running.
     if (defined $block->ONLY) {
         _show_lua($name, $src_label, $lua_src);
+        _dump_only($lua_src, $input_json, $data_json);
     }
 
     # Module is a file (multi-line source). input/data are JSON argv strings.
@@ -145,6 +147,41 @@ sub _show_lua ($$$) {
     print STDERR $lua_src;
     print STDERR "\n" unless $lua_src =~ /\n\z/;
     print STDERR "======== end lua ========\n";
+}
+
+sub _dump_only ($$$) {
+    my ($lua_src, $input_json, $data_json) = @_;
+    my $dir = File::Spec->catdir($ROOT, 'tmp');
+    make_path($dir);
+
+    my $policy = File::Spec->catfile($dir, 'policy.lua');
+    my $input  = File::Spec->catfile($dir, 'input.json');
+    my $data   = File::Spec->catfile($dir, 'data.json');
+    my $run    = File::Spec->catfile($dir, 'run.sh');
+
+    _write($policy, $lua_src);
+    _write($input,  _strip($input_json) . "\n");
+    _write($data,   _strip($data_json) . "\n");
+    _write($run,    _only_run_script());
+    chmod 0755, $run or die "chmod $run: $!";
+
+    print STDERR "dumped ONLY artifacts to $dir\n";
+    print STDERR "  policy.lua  input.json  data.json  run.sh\n";
+    print STDERR "re-run: $run\n";
+}
+
+sub _only_run_script () {
+    return <<'EOF';
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+LUAJIT="${LUAJIT:-luajit}"
+exec "$LUAJIT" t/eval_pkg.lua \
+  tmp/policy.lua \
+  "$(cat tmp/input.json)" \
+  "$(cat tmp/data.json)"
+EOF
 }
 
 sub _strip ($) {

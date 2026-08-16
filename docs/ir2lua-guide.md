@@ -574,7 +574,7 @@ python -m rego2lua compile plan.json -o policy.lua
 3. Keep runtime as **facade + layers** under `runtime/` (see `runtime/README.md`); public load path stays `rego_rt.lua`.  
 4. Prefer correctness over pretty Lua until `sanity.t` is green on IR path.  
 5. Log IR `type` on unknown statements; fail closed.  
-6. Use `--- ONLY` in `.t` files when debugging generated Lua dumps.  
+6. Use `--- ONLY` in `.t` files when debugging: stderr dumps Lua; `tmp/` gets `policy.lua`, `input.json`, `data.json`, and `run.sh`.  
 7. Walk the §4 example end-to-end once by hand (plan + func locals) before automating.
 
 ---

@@ -59,13 +59,13 @@ Regression tests use OpenResty-style Perl `Test::Base` files. Each file ends wit
 | `Rego` | **yes** | Full Rego policy source. This is the **compiler input** for `rego2lua`. |
 | `ref_lua` | bootstrap | Hand-written **reference Lua** that implements the same policy. Used only when `rego2lua` is not built yet, so tests can still check behavior. Not the primary success criterion. Generated modules must use `rule(input, data)`; bootstrap refs may omit `data` if unused (the harness still passes both). |
 | `out` | **yes** | Expected evaluation result as JSON. Keys are **rule names**, values are rule results (e.g. `{ "eq": false }`). |
-| `ONLY` | debug | **Test::Base** built-in: run only this block. Our harness also **prints the Lua under test** (from `rego2lua`, or `ref_lua` in bootstrap mode). Remove before commit. |
+| `ONLY` | debug | **Test::Base** built-in: run only this block. The harness **prints the Lua under test** and writes `tmp/{policy.lua,input.json,data.json,run.sh}` so you can re-eval with `./tmp/run.sh`. Remove before commit. |
 
 \* If `input` or `data` is omitted or empty, the harness treats it as `{}`.
 
 ### Debugging with `ONLY`
 
-Stderr shows the generated (or reference) Lua so you can inspect it while debugging. Do not leave `ONLY` in committed tests.
+Stderr shows the generated (or reference) Lua. The harness also dumps the module plus `input` / `data` JSON to `tmp/` (gitignored) and writes `tmp/run.sh`, which re-runs the same `t/eval_pkg.lua` evaluation from the repo root. Do not leave `ONLY` in committed tests.
 
 ### How a case is judged
 
