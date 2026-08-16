@@ -38,8 +38,8 @@ return function(rt, priv)
 
   -- CallStmt boolean → Lua condition.
   -- OPA 3-valued results: true | false | UNDEF.
-  -- In Lua, UNDEF (a table) is truthy, so never write: if rt.call_builtin(...) then
-  -- Use: if rt.is_ok(rt.call_builtin("equal", a, b)) then
+  -- For a 3-valued *slot* (raw builtin result). CallStmt emit uses
+  --   local def, v = rt.call_builtin(...); if def and v then
   -- Only exact true succeeds; false and UNDEF both fail.
   function rt.is_ok(x)
     return x == true

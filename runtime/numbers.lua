@@ -1,7 +1,7 @@
 -- numbers.lua — Layer 5: arithmetic & number builtins (priv only)
 --
 -- Non-numbers / div-by-zero / bad rem → UNDEF (no exceptions).
--- Codegen: rt.call_builtin("plus", a, b), etc.
+-- Codegen: local def, v = rt.call_builtin("plus", a, b)
 
 return function(rt, priv)
   local NULL = priv.NULL

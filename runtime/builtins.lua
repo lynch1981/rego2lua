@@ -1,7 +1,8 @@
 -- builtins.lua — Layer 6: CallStmt name → priv implementations
 --
--- Public: rt.builtins[name], rt.call_builtin(name, ...)
--- Prefer call_builtin in codegen. Every registration must be a function.
+-- rt.builtins[name]  — raw 3-valued impl (true | false | UNDEF | value)
+-- rt.call_builtin    — codegen: local def, v = rt.call_builtin(name, ...)
+--                      def is a boolean; v is the result only when def.
 
 return function(rt, priv)
   local reg = {
@@ -38,12 +39,17 @@ return function(rt, priv)
 
   rt.builtins = reg
 
-  --- Call a builtin by IR name. Unknown names return UNDEF.
+  --- CallStmt dispatch: (defined, value).
+  --- defined == false → unknown name or impl UNDEF; second return is nil.
   function rt.call_builtin(name, ...)
     local fn = rt.builtins[name]
     if not fn then
-      return rt.UNDEF
+      return false
     end
-    return fn(...)
+    local v = fn(...)
+    if rawequal(v, rt.UNDEF) then
+      return false
+    end
+    return true, v
   end
 end

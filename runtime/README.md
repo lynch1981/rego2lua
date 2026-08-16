@@ -53,7 +53,13 @@ Also: [`docs/ir2lua-guide.md`](../docs/ir2lua-guide.md) §8 · slices: [`docs/re
 |------|------------|
 | Load | facade only: `loadfile("runtime/rego_rt.lua")` / `require("rego_rt")` |
 | Kernel | `UNDEF`, `is_undef`, `is_def`, `is_ok`, `NULL`, `dot`, `values_equal`, `make_array` / `make_object` / `make_set` |
-| CallStmt | **`rt.call_builtin(name, …)` only** |
+| CallStmt | **`local def, v = rt.call_builtin(name, …)` only** |
+
+`call_builtin` returns **`(defined, value)`**:
+- unknown name or impl `UNDEF` → `false` (second return nil)
+- otherwise → `true, value` (`value` may be `false`, `0`, or `rt.NULL`)
+
+`rt.builtins[name]` is the raw 3-valued impl. Codegen must not call it.
 
 ### Rules
 
@@ -61,10 +67,10 @@ Also: [`docs/ir2lua-guide.md`](../docs/ir2lua-guide.md) §8 · slices: [`docs/re
 2. **Slots** — every IR local is `rt.UNDEF` or a Rego value. Do not leave Lua `nil` if you use `is_def` (`is_def(nil)` is true today).
 3. **UNDEF ≠ NULL ≠ nil** — missing path → `UNDEF`; JSON null → `rt.NULL`.
 4. **IR statement → kernel** — `DotStmt` → `rt.dot`; `EqualStmt` → `rt.values_equal`; `Make*` → `make_*`; definedness → `is_def` / `is_undef`.
-5. **CallStmt → `rt.call_builtin(name, …)`** — OPA names (`plus`, `equal`, `is_string`, `numbers.range`, …) only this way. Prefer that over `rt.builtins[name]`.
-6. **Boolean CallStmt** — result is `true` \| `false` \| `UNDEF`. **Never** `if call_builtin(...)`. Use `rt.is_ok(...)`.
-7. **Value CallStmt** (`plus`, `to_number`, …) — check `is_undef` / `is_def` on the result. `is_ok` is only for exact `true`.
-8. **Fail closed** — unknown builtin or unknown stmt type → generate-time error (preferred) or runtime `UNDEF`. Do not invent APIs.
+5. **CallStmt → `local def, v = rt.call_builtin(name, …)`** — never a single assignment (`local x = call_builtin(...)` captures only `defined`).
+6. **If `not def`** — stmt is undefined; skip the rest of the block. Do not use `v`.
+7. **Boolean CallStmt** — `if def and v then` (matched). `rt.is_ok` is for a **slot** that already holds a 3-valued raw result, not for wrapping `call_builtin`.
+8. **Fail closed** — unknown builtin or unknown stmt type → generate-time error (preferred). At runtime `call_builtin` yields `def == false`.
 
 ### Emit: good vs bad
 
@@ -73,15 +79,19 @@ Also: [`docs/ir2lua-guide.md`](../docs/ir2lua-guide.md) §8 · slices: [`docs/re
 if not rt.values_equal(a, b) then goto fail end
 
 -- good: CallStmt boolean
-if rt.is_ok(rt.call_builtin("equal", a, b)) then
+local def, ok = rt.call_builtin("equal", a, b)
+if def and ok then
   -- matched
 end
 
 -- good: CallStmt value
-local sum = rt.call_builtin("plus", a, b)
-if rt.is_undef(sum) then goto fail end
+local def, sum = rt.call_builtin("plus", a, b)
+if not def then goto fail end
 
--- bad: UNDEF is a table (truthy)
+-- bad: first return is defined, not the number
+local sum = rt.call_builtin("plus", a, b)
+
+-- bad: discards value; defined-true + equal-false still looks like success
 if rt.call_builtin("equal", a, b) then end
 ```
 

@@ -15,9 +15,13 @@ local function is_undef(x)
   return rt.is_undef(x)
 end
 
--- CallStmt path
+-- CallStmt path: unwrap (defined, value). Undefined → UNDEF for is_undef checks.
 local function b(name, ...)
-  return rt.call_builtin(name, ...)
+  local def, v = rt.call_builtin(name, ...)
+  if not def then
+    return rt.UNDEF
+  end
+  return v
 end
 
 ------------------------------------------------------------
@@ -182,7 +186,26 @@ check("range negative", arr_eq(b("numbers.range", -1, 2), {-1, 0, 1, 2}))
 check("range non-int", is_undef(b("numbers.range", 1.5, 3)))
 check("range is array", b("is_array", b("numbers.range", 1, 2)) == true)
 check("builtins numbers.range", arr_eq(rt.builtins["numbers.range"](0, 2), {0, 1, 2}))
-check("call_builtin unknown", is_undef(rt.call_builtin("nope")))
+do
+  local def, v = rt.call_builtin("nope")
+  check("call_builtin unknown def", def == false)
+  check("call_builtin unknown val", v == nil)
+end
+do
+  local def, v = rt.call_builtin("plus", 2, 3)
+  check("call_builtin plus def", def == true)
+  check("call_builtin plus val", v == 5)
+end
+do
+  local def, ok = rt.call_builtin("equal", 1, 2)
+  check("call_builtin equal miss def", def == true)
+  check("call_builtin equal miss ok", ok == false)
+end
+do
+  local def, ok = rt.call_builtin("equal", rt.UNDEF, 1)
+  check("call_builtin equal UNDEF def", def == false)
+  check("call_builtin equal UNDEF val", ok == nil)
+end
 
 ------------------------------------------------------------
 -- Kernel: values_equal (EqualStmt)
@@ -201,9 +224,9 @@ check("is_ok true", rt.is_ok(true) == true)
 check("is_ok false", rt.is_ok(false) == false)
 check("is_ok UNDEF", rt.is_ok(rt.UNDEF) == false)
 check("is_ok 0", rt.is_ok(0) == false)
-check("is_ok equal hit", rt.is_ok(b("equal", 1, 1)) == true)
-check("is_ok equal miss", rt.is_ok(b("equal", 1, 2)) == false)
-check("is_ok equal UNDEF", rt.is_ok(b("equal", rt.UNDEF, 1)) == false)
+check("is_ok raw equal hit", rt.is_ok(rt.builtins.equal(1, 1)) == true)
+check("is_ok raw equal miss", rt.is_ok(rt.builtins.equal(1, 2)) == false)
+check("is_ok raw equal UNDEF", rt.is_ok(rt.builtins.equal(rt.UNDEF, 1)) == false)
 check("raw UNDEF is truthy (why is_ok exists)", not not rt.UNDEF == true)
 
 ------------------------------------------------------------

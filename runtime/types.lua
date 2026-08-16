@@ -1,6 +1,6 @@
 -- types.lua — Layer 3: type predicates & type_name (CallStmt builtins)
 --
--- Installed on priv only. Codegen: rt.call_builtin("is_string", x).
+-- Installed on priv only. Codegen: local def, v = rt.call_builtin("is_string", x)
 -- UNDEF propagates: is_string(UNDEF) → UNDEF (not false).
 
 return function(rt, priv)

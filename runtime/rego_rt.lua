@@ -8,13 +8,13 @@
 --   rt.dot
 --   rt.values_equal          -- EqualStmt (boolean; UNDEF → false)
 --   rt.make_array / make_object / make_set
---   rt.call_builtin(name, …) -- CallStmt (prefer over rt.builtins)
---   rt.builtins              -- registry (impl table)
+--   rt.call_builtin(name, …) -- CallStmt: local def, v = rt.call_builtin(...)
+--   rt.builtins              -- raw 3-valued registry (not for codegen)
 --
--- CallStmt booleans are 3-valued (true | false | UNDEF). UNDEF is truthy in
--- Lua — always: if rt.is_ok(rt.call_builtin("equal", a, b)) then …
+-- Never: local x = rt.call_builtin("plus", a, b)  -- x is the defined flag
+-- Never: if rt.call_builtin(...) then             -- discards the value
 --
--- Named OPA builtins live on priv; only exposed via call_builtin / builtins.
+-- Named OPA builtins live on priv; codegen uses call_builtin only.
 -- Read order: value → dot → types → compare → numbers → builtins
 -- See runtime/README.md.
 
