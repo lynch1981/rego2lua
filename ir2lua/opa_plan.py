@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import tarfile
 import tempfile
 from pathlib import Path
 from typing import Any
+
+_PACKAGE_RE = re.compile(r"^\s*package\s+([A-Za-z_][\w.]*)")
 
 
 class OpaError(RuntimeError):
@@ -21,31 +24,14 @@ def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
         raise OpaError("opa not found on PATH") from e
 
 
-def read_package(rego_path: str | Path) -> str:
-    """Return the package path without the leading ``data.`` (e.g. ``foo``)."""
-    path = str(rego_path)
-    proc = _run(["opa", "parse", "--format=json", path])
-    if proc.returncode != 0:
-        detail = (proc.stderr or proc.stdout or "").strip()
-        raise OpaError(f"opa parse failed (exit {proc.returncode}): {detail}")
-    try:
-        ast = json.loads(proc.stdout)
-    except json.JSONDecodeError as e:
-        raise OpaError(f"opa parse produced invalid JSON: {e}") from e
-
-    parts: list[str] = []
-    for node in (ast.get("package") or {}).get("path") or []:
-        if not isinstance(node, dict):
-            continue
-        value = node.get("value")
-        ntype = node.get("type")
-        if ntype == "var" and value == "data":
-            continue
-        if ntype in ("string", "var") and isinstance(value, str):
-            parts.append(value)
-    if not parts:
-        raise OpaError(f"could not determine package in {path}")
-    return ".".join(parts)
+def read_package_name(rego_path: str | Path) -> str:
+    """Return the package name (e.g. ``foo`` or ``foo.bar``)."""
+    path = Path(rego_path)
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = _PACKAGE_RE.match(line)
+        if m:
+            return m.group(1)
+    raise OpaError(f"no package line in {path}")
 
 
 def extract_plan_json(bundle_path: str | Path) -> dict[str, Any]:
@@ -62,7 +48,7 @@ def extract_plan_json(bundle_path: str | Path) -> dict[str, Any]:
 
 def build_ir_plan(rego_path: str | Path) -> tuple[dict[str, Any], str]:
     """Build an OPA IR plan via ``opa build -t plan``. Returns ``(plan, package)``."""
-    pkg = read_package(rego_path)
+    pkg = read_package_name(rego_path)
     entry = pkg.replace(".", "/")
     with tempfile.TemporaryDirectory(prefix="rego2lua-") as tmp:
         bundle = Path(tmp) / "bundle.tar.gz"
