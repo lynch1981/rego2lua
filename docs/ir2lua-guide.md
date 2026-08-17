@@ -2,6 +2,8 @@
 
 Backend plan for **rego2lua**: compile **OPA’s official policy IR (JSON)** into **LuaJIT 2.1 / OpenResty**-compatible Lua.
 
+First tagged subset: **0.0.1-dev** ([`CHANGELOG.md`](../CHANGELOG.md), [`releasing.md`](./releasing.md)). That tag is a snapshot, not the end of this guide.
+
 ---
 
 ## 1. Goal and non-goals

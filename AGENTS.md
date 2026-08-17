@@ -23,7 +23,7 @@ Rego source  ──►  OPA (`opa build -t plan`)  ──►  plan.json (IR)  �
 
 Keep the translator small and correct. Prefer a working subset of IR/statement types over full OPA feature coverage until the scope is expanded.
 
-Primary design doc: **`docs/ir2lua-guide.md`**.
+Primary design doc: **`docs/ir2lua-guide.md`**. Public version string: repo-root **`VERSION`** and `ir2lua.__version__` (same value). Tags and GitHub pre-releases: [`docs/releasing.md`](docs/releasing.md).
 
 ### Layers of work
 
@@ -137,7 +137,9 @@ Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`)
 
 | Path | Role |
 |------|------|
+| `VERSION` | Public version string (same as `ir2lua.__version__`) |
 | `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua); §8 = runtime |
+| `docs/releasing.md` | Tags, SemVer, GitHub pre-releases |
 | `docs/rego-ir-by-example/` | IR by example: plans, stmt catalog, Lua sketches |
 | `docs/rego-builtins.md` | Full OPA built-in catalog (reference) |
 | `docs/rego-builtins-priority.md` | Builtins priority (Need × Cost → P0–P3) |

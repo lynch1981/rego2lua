@@ -8,7 +8,27 @@ Production path (no in-tree Rego frontend):
 Rego  →  OPA (`opa build -t plan`)  →  plan.json (IR)  →  rego2lua  →  Lua
 ```
 
-Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGENTS.md`](AGENTS.md).
+Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGENTS.md`](AGENTS.md). How we tag: [`docs/releasing.md`](docs/releasing.md).
+
+## Status (0.0.1-dev)
+
+**Developer preview.** Tag [`v0.0.1-dev`](https://github.com/lynch1981/rego2lua/releases/tag/v0.0.1-dev). Changelog: [`CHANGELOG.md`](CHANGELOG.md). License: [BSD-2-Clause](LICENSE).
+
+Works today: `package`, `default`, `input.field == …`, implicit AND, `local :=`, nested object fields. `t/runtime.t` and `t/cmp_eq.t` are green; `t/sanity.t` is **9/11** (`not` needs `NotStmt`). Not in this tag: `!=` / order compares, number/null IR constants, array index, `in` / `some`, planned `CallStmt`. `./go` is **not** green.
+
+Generated Lua loads `runtime/rego_rt.lua` with a CWD-relative `loadfile`. Evaluate from the **repo root**.
+
+### Quick start
+
+Needs `opa`, Python 3, and LuaJIT 2.1 on `PATH`.
+
+```bash
+git clone https://github.com/lynch1981/rego2lua.git
+cd rego2lua
+./rego2lua path/to/policy.rego > policy.lua
+# evaluate from repo root so runtime/rego_rt.lua resolves
+luajit t/eval_pkg.lua policy.lua '{"method":"GET"}' '{}'
+```
 
 ## Docs
 
@@ -21,6 +41,7 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 | [`docs/rego-builtins-runtime.md`](docs/rego-builtins-runtime.md) | How to implement those builtins (pure Lua → OpenResty) |
 | [`docs/learning-tokenize.md`](docs/learning-tokenize.md) | Rego lexer / tokens (**learning only**) |
 | [`docs/learning-ast.md`](docs/learning-ast.md) | AST + recursive-descent (**learning only**) |
+| [`docs/releasing.md`](docs/releasing.md) | Version numbers, tags, GitHub pre-releases |
 
 **Runtime (in progress):** [`runtime/`](runtime/) — slice **1.1.1** (undefined, compare, types, numbers). Entry: `rego_rt.lua`; layers explained in [`runtime/README.md`](runtime/README.md). Unit tests: `prove t/runtime.t`.
 
