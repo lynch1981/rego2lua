@@ -60,8 +60,8 @@ def extract_plan_json(bundle_path: str | Path) -> dict[str, Any]:
     raise OpaError("plan.json not found in opa bundle")
 
 
-def compile_plan(rego_path: str | Path) -> tuple[dict[str, Any], str]:
-    """Build a package-level plan IR. Returns ``(plan, package)``."""
+def build_ir_plan(rego_path: str | Path) -> tuple[dict[str, Any], str]:
+    """Build an OPA IR plan via ``opa build -t plan``. Returns ``(plan, package)``."""
     pkg = read_package(rego_path)
     entry = pkg.replace(".", "/")
     with tempfile.TemporaryDirectory(prefix="rego2lua-") as tmp:
