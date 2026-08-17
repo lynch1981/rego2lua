@@ -62,7 +62,7 @@ class Operand:
     @property
     def lua(self) -> str:
         if self.kind == "local":
-            return f"l{self.value}"
+            return f"t{self.value}"
         if self.kind == "bool":
             return "true" if self.value else "false"
         return lua_string(str(self.value))

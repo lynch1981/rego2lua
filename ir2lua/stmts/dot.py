@@ -25,6 +25,6 @@ class DotStmt:
         )
 
     def emit(self, cx: Emit, end: str) -> None:
-        cx.add(f"l{self.target} = rt.dot({self.source.lua}, {self.key.lua})")
-        cx.jump(f"rt.is_undef(l{self.target})", end)
+        cx.add(f"t{self.target} = rt.dot({self.source.lua}, {self.key.lua})")
+        cx.jump(f"rt.is_undef(t{self.target})", end)
         cx.mark_def(self.target)

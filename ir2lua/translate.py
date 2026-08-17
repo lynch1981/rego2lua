@@ -136,11 +136,11 @@ class _Translator:
             max_slot = 1
         for i in range(0, max_slot + 1):
             if i == 0:
-                self.add("local l0 = input or {}")
+                self.add("local t0 = input or {}")
             elif i == 1:
-                self.add("local l1 = data or {}")
+                self.add("local t1 = data or {}")
             else:
-                self.add(f"local l{i} = rt.UNDEF")
+                self.add(f"local t{i} = rt.UNDEF")
 
         self._returned = False
         for i, stmts in enumerate(parsed):

@@ -27,7 +27,7 @@ class ResetLocalStmt:
         return cls(cx.local(stmt.get("target"), "ResetLocal target"))
 
     def emit(self, cx: Emit, _end: str) -> None:
-        cx.add(f"l{self.target} = rt.UNDEF")
+        cx.add(f"t{self.target} = rt.UNDEF")
         cx.mark_undef(self.target)
 
 
@@ -46,7 +46,7 @@ class AssignVarStmt:
 
     def emit(self, cx: Emit, end: str) -> None:
         _jump_if_undef_src(cx, self.source, end)
-        cx.add(f"l{self.target} = {self.source.lua}")
+        cx.add(f"t{self.target} = {self.source.lua}")
         cx.mark_def(self.target)
 
 
@@ -67,6 +67,6 @@ class AssignVarOnceStmt:
 
     def emit(self, cx: Emit, end: str) -> None:
         _jump_if_undef_src(cx, self.source, end)
-        cx.add(f'if rt.is_def(l{self.target}) then error("AssignVarOnce conflict") end')
-        cx.add(f"l{self.target} = {self.source.lua}")
+        cx.add(f'if rt.is_def(t{self.target}) then error("AssignVarOnce conflict") end')
+        cx.add(f"t{self.target} = {self.source.lua}")
         cx.mark_def(self.target)
