@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """IsDefinedStmt / IsUndefinedStmt: block guards for default vs body."""
 
 from __future__ import annotations

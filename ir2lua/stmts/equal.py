@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """EqualStmt: continue if a == b, otherwise the block is undefined."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """IR statement handlers. Add a module, then list the class here."""
 
 from __future__ import annotations

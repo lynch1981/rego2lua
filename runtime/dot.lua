@@ -1,3 +1,6 @@
+
+-- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 -- dot.lua — Layer 2: field / index access (IR DotStmt)
 --
 -- Rego: missing key or bad source → undefined (not Lua nil, not error).

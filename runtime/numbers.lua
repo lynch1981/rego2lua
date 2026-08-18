@@ -1,3 +1,6 @@
+
+-- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 -- numbers.lua — Layer 5: arithmetic & number builtins (priv only)
 --
 -- Non-numbers / div-by-zero / bad rem → UNDEF (no exceptions).

@@ -1,3 +1,6 @@
+
+-- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 -- value.lua — Layer 1: value model + kernel helpers
 --
 -- What is a "Rego value" when stored in Lua?

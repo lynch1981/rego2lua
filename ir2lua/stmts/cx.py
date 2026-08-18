@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """Codegen context and lowered-statement protocol."""
 
 from __future__ import annotations

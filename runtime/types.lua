@@ -1,3 +1,6 @@
+
+-- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 -- types.lua — Layer 3: type predicates & type_name (CallStmt builtins)
 --
 -- Installed on priv only. Codegen: local def, v = rt.call_builtin("is_string", x)

@@ -1,3 +1,6 @@
+
+-- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 -- builtins.lua — Layer 6: CallStmt name → priv implementations
 --
 -- rt.builtins[name]  — raw 3-valued impl (true | false | UNDEF | value)

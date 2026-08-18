@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """Walk a plan: funcs → blocks → stmts. Emit a LuaJIT module."""
 
 from __future__ import annotations

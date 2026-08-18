@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """Shell out to OPA: Rego → plan.json."""
 
 from __future__ import annotations

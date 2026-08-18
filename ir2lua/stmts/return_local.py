@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """ReturnLocalStmt: leave the function with this local."""
 
 from __future__ import annotations

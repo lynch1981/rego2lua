@@ -1,3 +1,6 @@
+
+-- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 -- compare.lua — Layer 4: deep equality & ordering (OPA-style)
 --
 -- Public (kernel / EqualStmt):

@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """DotStmt: target := source[key]. Undefined if the key is missing."""
 
 from __future__ import annotations

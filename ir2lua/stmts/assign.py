@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """Slot writes: ResetLocal, AssignVar, AssignVarOnce."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """CLI: policy.rego → Lua on stdout."""
 
 from __future__ import annotations

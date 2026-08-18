@@ -1,3 +1,6 @@
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """IR operands → Lua expressions.
 
 OPA operand: local | bool | string_index.

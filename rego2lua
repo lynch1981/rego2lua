@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+
 """Harness entry: ./rego2lua policy.rego → Lua on stdout."""
 
 import os
