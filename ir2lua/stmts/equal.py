@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from ir2lua.operands import Operand
-from ir2lua.stmts.cx import Emit
+from ir2lua.stmts.ctx import Emit
 
 
 @dataclass
@@ -19,11 +19,11 @@ class EqualStmt:
     b: Operand
 
     @classmethod
-    def parse(cls, cx: Emit, stmt: dict[str, Any]) -> EqualStmt:
+    def parse(cls, ctx: Emit, stmt: dict[str, Any]) -> EqualStmt:
         return cls(
-            cx.operand(stmt.get("a"), "Equal a"),
-            cx.operand(stmt.get("b"), "Equal b"),
+            ctx.operand(stmt.get("a"), "Equal a"),
+            ctx.operand(stmt.get("b"), "Equal b"),
         )
 
-    def emit(self, cx: Emit, end: str) -> None:
-        cx.jump(f"not rt.values_equal({self.a.lua}, {self.b.lua})", end)
+    def emit(self, ctx: Emit, end: str) -> None:
+        ctx.jump(f"not rt.values_equal({self.a.lua}, {self.b.lua})", end)

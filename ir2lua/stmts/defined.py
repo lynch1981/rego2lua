@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from ir2lua.operands import Operand
-from ir2lua.stmts.cx import Emit
+from ir2lua.stmts.ctx import Emit
 
 
 @dataclass
@@ -18,13 +18,13 @@ class IsDefinedStmt:
     source: Operand
 
     @classmethod
-    def parse(cls, cx: Emit, stmt: dict[str, Any]) -> IsDefinedStmt:
-        return cls(cx.operand(stmt.get("source"), "IsDefined source"))
+    def parse(cls, ctx: Emit, stmt: dict[str, Any]) -> IsDefinedStmt:
+        return cls(ctx.operand(stmt.get("source"), "IsDefined source"))
 
-    def emit(self, cx: Emit, end: str) -> None:
-        cx.jump(f"rt.is_undef({self.source.lua})", end)
+    def emit(self, ctx: Emit, end: str) -> None:
+        ctx.jump(f"rt.is_undef({self.source.lua})", end)
         if self.source.local_index is not None:
-            cx.mark_def(self.source.local_index)
+            ctx.mark_def(self.source.local_index)
 
 
 @dataclass
@@ -33,10 +33,10 @@ class IsUndefinedStmt:
     source: Operand
 
     @classmethod
-    def parse(cls, cx: Emit, stmt: dict[str, Any]) -> IsUndefinedStmt:
-        return cls(cx.operand(stmt.get("source"), "IsUndefined source"))
+    def parse(cls, ctx: Emit, stmt: dict[str, Any]) -> IsUndefinedStmt:
+        return cls(ctx.operand(stmt.get("source"), "IsUndefined source"))
 
-    def emit(self, cx: Emit, end: str) -> None:
-        cx.jump(f"rt.is_def({self.source.lua})", end)
+    def emit(self, ctx: Emit, end: str) -> None:
+        ctx.jump(f"rt.is_def({self.source.lua})", end)
         if self.source.local_index is not None:
-            cx.mark_undef(self.source.local_index)
+            ctx.mark_undef(self.source.local_index)

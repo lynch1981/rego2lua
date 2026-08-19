@@ -9,7 +9,7 @@ from typing import Any
 
 from ir2lua.operands import TranslateError
 from ir2lua.stmts.assign import AssignVarOnceStmt, AssignVarStmt, ResetLocalStmt
-from ir2lua.stmts.cx import Emit, Lowered
+from ir2lua.stmts.ctx import Emit, Lowered
 from ir2lua.stmts.defined import IsDefinedStmt, IsUndefinedStmt
 from ir2lua.stmts.dot import DotStmt
 from ir2lua.stmts.equal import EqualStmt
@@ -30,7 +30,7 @@ HANDLERS = {
 }
 
 
-def parse_stmt(cx: Emit, node: dict[str, Any]) -> Lowered:
+def parse_stmt(ctx: Emit, node: dict[str, Any]) -> Lowered:
     typ = node.get("type")
     stmt = node.get("stmt")
     if not typ:
@@ -40,4 +40,4 @@ def parse_stmt(cx: Emit, node: dict[str, Any]) -> Lowered:
     handler = HANDLERS.get(typ)
     if handler is None:
         raise TranslateError(f"unsupported IR statement: {typ}")
-    return handler.parse(cx, stmt)
+    return handler.parse(ctx, stmt)

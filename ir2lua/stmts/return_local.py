@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from ir2lua.operands import Operand
-from ir2lua.stmts.cx import Emit
+from ir2lua.stmts.ctx import Emit
 
 
 @dataclass
@@ -18,9 +18,9 @@ class ReturnLocalStmt:
     source: Operand
 
     @classmethod
-    def parse(cls, cx: Emit, stmt: dict[str, Any]) -> ReturnLocalStmt:
-        return cls(cx.operand(stmt.get("source"), "ReturnLocal source"))
+    def parse(cls, ctx: Emit, stmt: dict[str, Any]) -> ReturnLocalStmt:
+        return cls(ctx.operand(stmt.get("source"), "ReturnLocal source"))
 
-    def emit(self, cx: Emit, _end: str) -> None:
-        cx.add(f"return {self.source.lua}")
-        cx.mark_return()
+    def emit(self, ctx: Emit, _end: str) -> None:
+        ctx.add(f"return {self.source.lua}")
+        ctx.mark_return()
