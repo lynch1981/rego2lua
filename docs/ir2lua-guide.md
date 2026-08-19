@@ -496,11 +496,12 @@ Bootstrap order (same as `./go`):
 | Order | Suite | Why |
 |-------|--------|-----|
 | 0 | `runtime.t` | Unit tests for `runtime/` (loads facade `rego_rt.lua`) |
-| 1 | `sanity.t` | default, `==`, AND, `not`, `:=` |
-| 2 | `scalars.t` | null / bool / number / string |
-| 3 | `access.t` | `DotStmt`, indexing |
-| 4 | `membership.t` | `ScanStmt` / `in` |
-| 5 | `cmp_*.t` | compare stmts |
+| 1 | `sanity.t` | default, `==`, AND, `:=` |
+| 2 | `not.t` | `not` / `NotStmt` |
+| 3 | `scalars.t` | null / bool / number / string |
+| 4 | `access.t` | `DotStmt`, indexing |
+| 5 | `membership.t` | `ScanStmt` / `in` |
+| 6 | `cmp_*.t` | compare stmts |
 
 Until the binary exists, `t::Rego` still falls back to `--- ref_lua`.
 

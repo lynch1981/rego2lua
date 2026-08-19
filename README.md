@@ -14,7 +14,7 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 
 **Developer preview.** Tag [`v0.0.1-dev`](https://github.com/lynch1981/rego2lua/releases/tag/v0.0.1-dev). Changelog: [`CHANGELOG.md`](CHANGELOG.md). License: [BSD-2-Clause](LICENSE).
 
-Works today: `package`, `default`, `input.field == …`, implicit AND, `local :=`, nested object fields. `t/runtime.t` and `t/cmp_eq.t` are green; `t/sanity.t` is **9/11** (`not` needs `NotStmt`). Not in this tag: `!=` / order compares, number/null IR constants, array index, `in` / `some`, planned `CallStmt`. `./go` is **not** green.
+Works today: `package`, `default`, `input.field == …`, implicit AND, `local :=`, nested object fields. `t/runtime.t`, `t/sanity.t`, and `t/cmp_eq.t` are green; `t/not.t` needs `NotStmt`. Not in this tag: `not`, `!=` / order compares, number/null IR constants, array index, `in` / `some`, planned `CallStmt`. `./go` is **not** green.
 
 Generated Lua loads `runtime/rego_rt.lua` with a CWD-relative `loadfile`. Evaluate from the **repo root**.
 

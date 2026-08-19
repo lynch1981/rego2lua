@@ -192,7 +192,8 @@ Needs: `luajit`, `lua-cjson`, `opa` (for IR generation), Perl `Test::Base` (`lib
 | File | Covers |
 |------|--------|
 | `runtime.t` | `runtime/` unit tests via facade (UNDEF, compare, types, numbers) |
-| `sanity.t` | `default`, field compare, AND, `not`, local `:=` |
+| `sanity.t` | `default`, field compare, AND, local `:=` |
+| `not.t` | `not` (`NotStmt`) |
 | `scalars.t` | string, number, boolean, null |
 | `access.t` | object `.`, array `[i]`, nested |
 | `membership.t` | `"x" in arr`, `arr[_] == "x"` |

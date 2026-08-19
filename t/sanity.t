@@ -228,79 +228,7 @@ return foo
 
 
 
-=== TEST 7: not - expression false, not succeeds
---- input
-{
-    "method": "GET"
-}
---- data
-{
-}
---- Rego
-package foo
-
-default allow := false
-
-allow if {
-    not input.method == "POST"
-}
---- ref_lua
-local foo = {}
-
-function foo.allow(input)
-  input = input or {}
-  local allow = false
-  if not (input.method == "POST") then
-    allow = true
-  end
-  return allow
-end
-
-return foo
---- out
-{
-    "allow": true
-}
-
-
-
-=== TEST 8: not - expression true, not fails
---- input
-{
-    "method": "POST"
-}
---- data
-{
-}
---- Rego
-package foo
-
-default allow := false
-
-allow if {
-    not input.method == "POST"
-}
---- ref_lua
-local foo = {}
-
-function foo.allow(input)
-  input = input or {}
-  local allow = false
-  if not (input.method == "POST") then
-    allow = true
-  end
-  return allow
-end
-
-return foo
---- out
-{
-    "allow": false
-}
-
-
-
-=== TEST 9: local binding - allow GET
+=== TEST 7: local binding - allow GET
 --- input
 {
     "method": "GET"
@@ -340,7 +268,7 @@ return foo
 
 
 
-=== TEST 10: local binding - deny POST
+=== TEST 8: local binding - deny POST
 --- input
 {
     "method": "POST"
@@ -380,7 +308,7 @@ return foo
 
 
 
-=== TEST 11: local binding - deny empty input
+=== TEST 9: local binding - deny empty input
 --- input
 {
 }

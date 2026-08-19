@@ -366,7 +366,7 @@ deny contains "body too large" if {
 
 | Layer | What | Where |
 | --- | --- | --- |
-| **IR / tests** | Unlock `t/*.t` (sanity → scalars → access → membership → cmp) | [`ir2lua-guide.md`](./ir2lua-guide.md), `AGENTS.md`, `./go` |
+| **IR / tests** | Unlock `t/*.t` (sanity → not → scalars → access → membership → cmp) | [`ir2lua-guide.md`](./ir2lua-guide.md), `AGENTS.md`, `./go` |
 | **Builtins priority** | Need × Cost → **P0–P3** (this file) | **This file** |
 | **Builtins runtime** | Pure vs OpenResty, deps, slice order, backends | [`rego-builtins-runtime.md`](./rego-builtins-runtime.md) |
 

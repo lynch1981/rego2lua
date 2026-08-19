@@ -3,6 +3,7 @@
 prove \
   t/runtime.t \
   t/sanity.t \
+  t/not.t \
   t/scalars.t \
   t/access.t \
   t/membership.t \

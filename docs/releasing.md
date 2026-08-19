@@ -15,8 +15,8 @@ Product version is SemVer (`MAJOR.MINOR.PATCH`). The **git tag** adds a `v` pref
 
 | Tag | Meaning |
 |-----|---------|
-| `v0.0.1-dev` | This snapshot (translator exists; `sanity.t` 9/11) |
-| `v0.0.1` | `prove t/sanity.t` fully green (`NotStmt`) |
+| `v0.0.1-dev` | This snapshot (translator exists; `sanity.t` 9/11 at tag time) |
+| `v0.0.1` | `prove t/sanity.t t/not.t` green |
 | `v0.0.2` | Next unlocked suite (scalars or remaining access) |
 | `v0.1.0` | First advertised usable subset (`./go` green, or a written subset note) |
 
@@ -25,7 +25,7 @@ Stay on GitHub **pre-releases** until `v0.1.0`. Never retag; bump `VERSION` in a
 ## This snapshot (`0.0.1-dev`)
 
 1. Docs + license + version land on `main`.
-2. `prove t/runtime.t t/sanity.t t/cmp_eq.t` (expect sanity 9/11 until `NotStmt`).
+2. `prove t/runtime.t t/sanity.t t/cmp_eq.t` (green). `prove t/not.t` fails until `NotStmt`.
 3. Annotated tag:
 
    ```bash

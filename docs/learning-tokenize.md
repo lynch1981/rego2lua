@@ -33,7 +33,7 @@ It does **not** understand packages, rules, or precedence. That is the parser’
 
 ## 2. What we tokenize (v0.1 subset)
 
-Aligned with the current test suite (`sanity`, `scalars`, `access`, `membership`, `cmp_*`):
+Aligned with the current test suite (`sanity`, `not`, `scalars`, `access`, `membership`, `cmp_*`):
 
 ### Keywords
 
