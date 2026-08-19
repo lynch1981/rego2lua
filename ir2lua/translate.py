@@ -149,14 +149,14 @@ class _Translator:
 
         self._returned = False
         for i, stmts in enumerate(parsed):
-            end = f"block_{i}_end"
+            skip = f"lbl_skip_b{i + 1}"
             self._need_label = False
             self._known_def = set(self._params)
             for node in stmts:
-                node.emit(self, end)
+                node.emit(self, skip)
             if self._need_label:
                 self.add()
-                self.add(f"::{end}::")
+                self.add(f"::{skip}::")
         if not self._returned:
             self.add("return rt.UNDEF")
         self.indent -= 1
