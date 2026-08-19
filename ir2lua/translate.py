@@ -61,7 +61,7 @@ class _Translator:
         if line == "":
             self.lines.append("")
         else:
-            self.lines.append(("  " * self.indent) + line)
+            self.lines.append(("    " * self.indent) + line)
 
     def text(self) -> str:
         body = "\n".join(self.lines)
