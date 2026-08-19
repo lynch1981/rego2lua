@@ -1,5 +1,5 @@
 
-# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+# Copyright (c) 2026, Lei Meng
 
 """IR statement handlers. Add a module, then list the class here."""
 

@@ -1,5 +1,5 @@
 
--- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+-- Copyright (c) 2026, Lei Meng
 
 -- dot.lua — Layer 2: field / index access (IR DotStmt)
 --

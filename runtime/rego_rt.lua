@@ -1,5 +1,5 @@
 
--- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+-- Copyright (c) 2026, Lei Meng
 
 -- rego_rt.lua — facade: assemble the Rego runtime for IR → Lua.
 --

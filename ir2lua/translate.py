@@ -1,5 +1,5 @@
 
-# Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+# Copyright (c) 2026, Lei Meng
 
 """Walk a plan: funcs → blocks → stmts. Emit a LuaJIT module."""
 

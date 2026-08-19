@@ -1,5 +1,5 @@
 
--- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+-- Copyright (c) 2026, Lei Meng
 
 -- types.lua — Layer 3: type predicates & type_name (CallStmt builtins)
 --

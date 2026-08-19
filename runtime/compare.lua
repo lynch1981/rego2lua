@@ -1,5 +1,5 @@
 
--- Copyright (c) 2026, Lei Meng <lynch.meng@hotmail.com>
+-- Copyright (c) 2026, Lei Meng
 
 -- compare.lua — Layer 4: deep equality & ordering (OPA-style)
 --
