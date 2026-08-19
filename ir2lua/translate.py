@@ -16,7 +16,7 @@ from ir2lua.operands import (
     parse_operand,
     static_strings,
 )
-from ir2lua.stmts import parse_node
+from ir2lua.stmts import parse_stmt
 
 # Re-export for the CLI.
 __all__ = ["TranslateError", "translate_plan"]
@@ -131,7 +131,7 @@ class _Translator:
             self._params.add(self.local(p, f"{name} param"))
         if "return" in func:
             self.local(func["return"], f"{name} return")
-        parsed = [[parse_node(self, n) for n in (b.get("stmts") or [])] for b in blocks]
+        parsed = [[parse_stmt(self, n) for n in (b.get("stmts") or [])] for b in blocks]
 
         self.add(f"local function {name}(input, data)")
         self.indent += 1

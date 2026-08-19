@@ -554,7 +554,7 @@ rego2lua/                 # or ir2lua/
   __init__.py
   load.py                 # json → Policy dataclasses
   operands.py             # operand → Lua expr
-  stmts/                  # one module per stmt family (optional)
+  stmts/                  # parse.py dispatcher; one module per stmt family
   translate.py            # recursive driver
   runtime_lua.py          # string blob of helpers
   cli.py                  # plan.json → out.lua
