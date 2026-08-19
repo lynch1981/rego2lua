@@ -21,9 +21,9 @@ class EqualStmt:
     @classmethod
     def parse(cls, ctx: Emit, stmt: dict[str, Any]) -> EqualStmt:
         return cls(
-            ctx.operand(stmt.get("a"), "Equal a"),
-            ctx.operand(stmt.get("b"), "Equal b"),
+            ctx.resolve_operand(stmt.get("a"), "Equal a"),
+            ctx.resolve_operand(stmt.get("b"), "Equal b"),
         )
 
-    def emit(self, ctx: Emit, end: str) -> None:
-        ctx.jump(f"not rt.values_equal({self.a.lua}, {self.b.lua})", end)
+    def emit(self, ctx: Emit, label: str) -> None:
+        ctx.jump_if(f"not rt.values_equal({self.a.lua}, {self.b.lua})", label)

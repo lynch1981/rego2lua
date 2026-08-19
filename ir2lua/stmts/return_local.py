@@ -19,8 +19,8 @@ class ReturnLocalStmt:
 
     @classmethod
     def parse(cls, ctx: Emit, stmt: dict[str, Any]) -> ReturnLocalStmt:
-        return cls(ctx.operand(stmt.get("source"), "ReturnLocal source"))
+        return cls(ctx.resolve_operand(stmt.get("source"), "ReturnLocal source"))
 
-    def emit(self, ctx: Emit, _end: str) -> None:
-        ctx.add(f"return {self.source.lua}")
+    def emit(self, ctx: Emit, _label: str) -> None:
+        ctx.add_line(f"return {self.source.lua}")
         ctx.mark_return()

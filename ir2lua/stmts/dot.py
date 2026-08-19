@@ -22,12 +22,12 @@ class DotStmt:
     @classmethod
     def parse(cls, ctx: Emit, stmt: dict[str, Any]) -> DotStmt:
         return cls(
-            ctx.local(stmt.get("target"), "Dot target"),
-            ctx.operand(stmt.get("source"), "Dot source"),
-            ctx.operand(stmt.get("key"), "Dot key"),
+            ctx.decl_local(stmt.get("target"), "Dot target"),
+            ctx.resolve_operand(stmt.get("source"), "Dot source"),
+            ctx.resolve_operand(stmt.get("key"), "Dot key"),
         )
 
-    def emit(self, ctx: Emit, end: str) -> None:
-        ctx.add(f"t{self.target} = rt.dot({self.source.lua}, {self.key.lua})")
-        ctx.jump(f"rt.is_undef(t{self.target})", end)
+    def emit(self, ctx: Emit, label: str) -> None:
+        ctx.add_line(f"t{self.target} = rt.dot({self.source.lua}, {self.key.lua})")
+        ctx.jump_if(f"rt.is_undef(t{self.target})", label)
         ctx.mark_def(self.target)
