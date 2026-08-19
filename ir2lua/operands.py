@@ -47,6 +47,7 @@ def lua_string(s: str) -> str:
 
 
 def lua_ident(name: str) -> str:
+    """Turn a name into a Lua identifier (dots and other illegal chars → `_`)."""
     ident = re.sub(r"[^A-Za-z0-9_]", "_", name)
     if not ident or ident[0].isdigit() or ident in LUA_RESERVED:
         ident = "m_" + ident

@@ -25,7 +25,7 @@ __all__ = ["TranslateError", "translate_plan"]
 def _rego_func_name(func: dict[str, Any]) -> str:
     name = func.get("name")
     if isinstance(name, str) and name:
-        return lua_ident(name.replace(".", "_"))
+        return lua_ident(name)
     path = func.get("path") or []
     if path:
         return lua_ident("_".join(str(p) for p in path))
@@ -94,7 +94,7 @@ class _Translator:
         self._known_def.discard(slot)
 
     def run(self) -> str:
-        pkg = lua_ident(self.package.replace(".", "_"))
+        pkg = lua_ident(self.package)
         funcs = (self.plan.get("funcs") or {}).get("funcs")
         if not isinstance(funcs, list) or not funcs:
             raise TranslateError("plan has no funcs")
