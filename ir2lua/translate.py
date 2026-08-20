@@ -51,7 +51,7 @@ class _Translator:
         self.package = package
         self.lines: list[str] = []
         self.indent = 0
-        self.slots: set[int] = set()
+        self.max_slot = 1
         self._params: set[int] = set()
         self._known_def: set[int] = set()
         self._need_label = False
@@ -68,13 +68,13 @@ class _Translator:
 
     def decl_local(self, raw: Any, what: str) -> int:
         idx = parse_local(raw, what)
-        self.slots.add(idx)
+        self.max_slot = max(self.max_slot, idx)
         return idx
 
     def resolve_operand(self, raw: Any, what: str) -> Operand:
         op = parse_operand(raw, self.strings, what)
         if op.local_index is not None:
-            self.slots.add(op.local_index)
+            self.max_slot = max(self.max_slot, op.local_index)
         return op
 
     def jump_if(self, cond: str, label: str) -> None:
@@ -125,7 +125,7 @@ class _Translator:
         if not isinstance(blocks, list):
             raise TranslateError(f"{name}: missing blocks")
 
-        self.slots = set()
+        self.max_slot = 1
         self._params = set()
         for p in func.get("params") or []:
             self._params.add(self.decl_local(p, f"{name} param"))
@@ -135,10 +135,7 @@ class _Translator:
 
         self.add_line(f"local function {name}(input, data)")
         self.indent += 1
-        max_slot = max(self.slots) if self.slots else 1
-        if max_slot < 1:
-            max_slot = 1
-        for i in range(0, max_slot + 1):
+        for i in range(0, self.max_slot + 1):
             if i == 0:
                 self.add_line("local t0 = input or {}")
             elif i == 1:
