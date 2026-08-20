@@ -52,7 +52,6 @@ class _Translator:
         self.lines: list[str] = []
         self.indent = 0
         self.max_slot = 1
-        self._params: set[int] = set()
         self._known_def: set[int] = set()
         self._need_label = False
         self._returned = False
@@ -126,9 +125,10 @@ class _Translator:
             raise TranslateError(f"{name}: missing blocks")
 
         self.max_slot = 1
-        self._params = set()
+        n_params = 0
         for p in func.get("params") or []:
-            self._params.add(self.decl_local(p, f"{name} param"))
+            self.decl_local(p, f"{name} param")
+            n_params += 1
         if "return" in func:
             self.decl_local(func["return"], f"{name} return")
         parsed = [[parse_stmt(self, n) for n in (b.get("stmts") or [])] for b in blocks]
@@ -148,7 +148,7 @@ class _Translator:
         for i, stmts in enumerate(parsed):
             skip = f"lbl_skip_b{i + 1}"
             self._need_label = False
-            self._known_def = set(self._params)
+            self._known_def = set(range(n_params))
             for node in stmts:
                 node.emit(self, skip)
             if self._need_label:
