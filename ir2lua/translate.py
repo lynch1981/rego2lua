@@ -14,7 +14,6 @@ from ir2lua.operands import (
     lua_ident,
     parse_local,
     parse_operand,
-    static_strings,
 )
 from ir2lua.stmts import parse_stmt
 
@@ -47,7 +46,7 @@ class _Translator:
         if not package:
             raise TranslateError("package name is required")
         self.plan = plan
-        self.strings = static_strings(plan)
+        self.strings = _static_strings(plan)
         self.package = package
         self.lines: list[str] = []
         self.indent = 0
@@ -159,6 +158,23 @@ class _Translator:
         self.indent -= 1
         self.add_line("end")
         self.add_line()
+
+
+def _static_strings(plan: dict[str, Any]) -> list[str]:
+    raw = (plan.get("static") or {}).get("strings")
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise TranslateError("static.strings must be an array")
+    out: list[str] = []
+    for i, item in enumerate(raw):
+        if not isinstance(item, dict) or "value" not in item:
+            raise TranslateError(f"static.strings[{i}] must be an object with value")
+        val = item["value"]
+        if not isinstance(val, str):
+            raise TranslateError(f"static.strings[{i}].value must be a string")
+        out.append(val)
+    return out
 
 
 def translate_plan(plan: dict[str, Any], package: str) -> str:

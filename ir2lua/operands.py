@@ -106,20 +106,3 @@ def parse_operand(raw: Any, strings: list[str], what: str) -> Operand:
             raise TranslateError(f"{what}: string_index {val} out of range")
         return Operand("string", strings[val])
     raise TranslateError(f"{what}: unsupported operand type {typ!r}")
-
-
-def static_strings(plan: dict[str, Any]) -> list[str]:
-    raw = (plan.get("static") or {}).get("strings")
-    if raw is None:
-        return []
-    if not isinstance(raw, list):
-        raise TranslateError("static.strings must be an array")
-    out: list[str] = []
-    for i, item in enumerate(raw):
-        if not isinstance(item, dict) or "value" not in item:
-            raise TranslateError(f"static.strings[{i}] must be an object with value")
-        val = item["value"]
-        if not isinstance(val, str):
-            raise TranslateError(f"static.strings[{i}].value must be a string")
-        out.append(val)
-    return out
