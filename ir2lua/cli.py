@@ -18,20 +18,27 @@ def compile_rego(rego_path: str) -> str:
     return translate_plan(plan, package)
 
 
+def _usage(to) -> None:
+    to.write("usage: rego2lua <policy.rego>\n")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
-    if args and args[0] in ("-V", "--version"):
+    if len(args) != 1:
+        _usage(sys.stderr)
+        return 2
+    arg = args[0]
+    if arg in ("-V", "--version"):
         sys.stdout.write(f"rego2lua {__version__}\n")
         return 0
-    if len(args) != 1 or args[0] in ("-h", "--help"):
-        sys.stderr.write("usage: rego2lua <policy.rego>\n")
-        return 0 if args and args[0] in ("-h", "--help") else 2
-    path = args[0]
-    if not Path(path).is_file():
-        sys.stderr.write(f"rego2lua: not a file: {path}\n")
+    if arg in ("-h", "--help"):
+        _usage(sys.stdout)
+        return 0
+    if not Path(arg).is_file():
+        sys.stderr.write(f"rego2lua: not a file: {arg}\n")
         return 2
     try:
-        lua = compile_rego(path)
+        lua = compile_rego(arg)
     except (OpaError, TranslateError) as e:
         sys.stderr.write(f"rego2lua: {e}\n")
         return 1
