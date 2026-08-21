@@ -35,6 +35,14 @@ Stay on GitHub **pre-releases** until `v0.1.0`. Never retag; bump `VERSION` in a
 4. `git push origin main --tags`.
 5. GitHub → Releases → draft from the tag → mark **pre-release** → paste the matching [`CHANGELOG.md`](../CHANGELOG.md) section. Source zip/tarball is enough.
 
+## CI
+
+Pull requests run [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Direct pushes to `main` do not.
+
+The job installs the same Debian packages as local development (`luajit`, `lua-cjson`, `libtest-base-perl`), then installs the official OPA CLI with [`open-policy-agent/setup-opa@v2`](https://github.com/open-policy-agent/setup-opa) pinned to **1.18.2**. That puts `opa` on `PATH` so `./rego2lua` can run `opa build -t plan` — the same frontend as a developer laptop. System `python3` runs the translator. The pin exists because plan JSON is the compiler interface; do not float `latest`.
+
+The required bar is [`./ci`](../ci) (`prove t/runtime.t t/sanity.t t/cmp_eq.t`). [`./go`](../go) is the full suite and is **not** the gate until it is green. When a suite goes fully green, add it to `./ci` and mention it in the README.
+
 ## Not published yet
 
 | Channel | Why later |
@@ -42,7 +50,6 @@ Stay on GitHub **pre-releases** until `v0.1.0`. Never retag; bump `VERSION` in a
 | PyPI / `pip install` | No `pyproject.toml`; the product is a repo script + `runtime/`. |
 | LuaRocks | Generated modules `loadfile` the in-tree runtime; no rockspec. |
 | Docker / binary | Needs OPA + Python + LuaJIT; a container is a convenience wrap. |
-| GitHub Actions | Useful next; not required to publish a source tag. |
 
 ## Next tags (not this snapshot)
 

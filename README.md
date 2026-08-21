@@ -1,5 +1,7 @@
 # rego2lua
 
+[![ci](https://github.com/lynch1981/rego2lua/actions/workflows/ci.yml/badge.svg)](https://github.com/lynch1981/rego2lua/actions/workflows/ci.yml)
+
 Source-to-source compiler: **Rego** (OPA policy language) → **Lua** for **LuaJIT 2.1** / OpenResty.
 
 Production path (no in-tree Rego frontend):
@@ -8,7 +10,7 @@ Production path (no in-tree Rego frontend):
 Rego  →  OPA (`opa build -t plan`)  →  plan.json (IR)  →  rego2lua  →  Lua
 ```
 
-Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGENTS.md`](AGENTS.md). How we tag: [`docs/releasing.md`](docs/releasing.md).
+Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGENTS.md`](AGENTS.md). Tags and CI: [`docs/releasing.md`](docs/releasing.md).
 
 ## Status (0.0.1-dev)
 
@@ -41,7 +43,7 @@ luajit t/eval_pkg.lua policy.lua '{"method":"GET"}' '{}'
 | [`docs/rego-builtins-runtime.md`](docs/rego-builtins-runtime.md) | How to implement those builtins (pure Lua → OpenResty) |
 | [`docs/learning-tokenize.md`](docs/learning-tokenize.md) | Rego lexer / tokens (**learning only**) |
 | [`docs/learning-ast.md`](docs/learning-ast.md) | AST + recursive-descent (**learning only**) |
-| [`docs/releasing.md`](docs/releasing.md) | Version numbers, tags, GitHub pre-releases |
+| [`docs/releasing.md`](docs/releasing.md) | Version numbers, tags, GitHub pre-releases, CI |
 
 **Runtime (in progress):** [`runtime/`](runtime/) — slice **1.1.1** (undefined, compare, types, numbers). Entry: `rego_rt.lua`; layers explained in [`runtime/README.md`](runtime/README.md). Unit tests: `prove t/runtime.t`.
 
@@ -142,15 +144,20 @@ return cmp
 ### Run tests
 
 ```bash
+# required CI bar (GitHub Actions on pull requests)
+./ci
+
 # runtime unit tests (no policy)
 prove t/runtime.t
 
 # policy fixtures (start here after runtime)
 prove t/sanity.t
 
-# all suites: runtime first, then language / compares
+# all suites: runtime first, then language / compares (not yet green)
 ./go
 ```
+
+Pull requests run `./ci` on GitHub Actions (Ubuntu 24.04, OPA **1.18.2**). How that job installs OPA: [`docs/releasing.md`](docs/releasing.md#ci). Expand `./ci` when a suite goes fully green; do not treat `./go` as the gate until it is.
 
 Requirements:
 

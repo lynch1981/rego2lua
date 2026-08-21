@@ -139,13 +139,15 @@ Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`)
 |------|------|
 | `VERSION` | Public version string (same as `ir2lua.__version__`) |
 | `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua); §8 = runtime |
-| `docs/releasing.md` | Tags, SemVer, GitHub pre-releases |
+| `docs/releasing.md` | Tags, SemVer, GitHub pre-releases, CI |
 | `docs/rego-ir-by-example/` | IR by example: plans, stmt catalog, Lua sketches |
 | `docs/rego-builtins.md` | Full OPA built-in catalog (reference) |
 | `docs/rego-builtins-priority.md` | Builtins priority (Need × Cost → P0–P3) |
 | `docs/rego-builtins-runtime.md` | Builtins implement slices (pure Lua → OpenResty) |
 | `docs/learning-*.md` | Optional learning notes (lexer/AST); not the short path |
 | `runtime/` | Shared Lua runtime (`rego_rt.lua` facade + layers). **Codegen contract:** `runtime/README.md` |
+| `ci` | Required CI bar (`prove` of currently green suites). Expand when a suite goes green |
+| `.github/workflows/ci.yml` | GitHub Actions: **pull requests only**; runs `./ci` |
 | `t/runtime.t` | Runtime unit tests (LuaJIT TAP via `t/runtime_rt.lua`) |
 | `t/*.t` | Behavioral regression tests (policy fixtures) |
 | `t/Rego.pm` | Harness: get Lua → run under LuaJIT → compare `--- out` |
@@ -182,8 +184,11 @@ Notes:
 ```bash
 prove t/runtime.t   # runtime unit tests
 prove t/sanity.t    # first policy suite
+./ci                # required CI bar (GitHub Actions on PRs)
 ./go                # full suite: runtime → language → compares
 ```
+
+GitHub Actions runs `./ci` on pull requests (not on push). Do **not** treat `./go` as the required gate until it is green. OPA install and pin: [`docs/releasing.md`](docs/releasing.md#ci).
 
 Needs: `luajit`, `lua-cjson`, `opa` (for IR generation), Perl `Test::Base` (`libtest-base-perl`), `JSON::PP`.
 
