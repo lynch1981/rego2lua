@@ -1,4 +1,5 @@
 #!/bin/sh
 # Required CI bar. Expand when a suite goes fully green.
 # Full suite (not yet green): ./go
+
 prove t/runtime.t t/sanity.t t/cmp_eq.t
