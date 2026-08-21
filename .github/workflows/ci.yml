@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LuaJIT, lua-cjson, Test::Base
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luajit lua-cjson libtest-base-perl
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: "1.18.2"
+
+      - name: Show toolchain
+        run: |
+          python3 --version
+          luajit -v
+          opa version
+          prove --version
+          luajit -e 'require("cjson.safe")'
+
+      - name: Compile Python package
+        run: python3 -m compileall -q -f ir2lua
+
+      - name: Required test bar
+        run: ./ci
