@@ -7,6 +7,7 @@ prove -j "$(nproc)" \
   t/sanity.t \
   t/not.t \
   t/scalars.t \
+  t/access.t \
   t/cmp_eq.t \
   t/cmp_ne.t \
   t/cmp_gt.t \

@@ -7,6 +7,14 @@ Pre-releases use a SemVer suffix (`-dev`). See [`docs/releasing.md`](docs/releas
 
 ## Unreleased
 
+### Fixed
+
+- Array index via `rt.dot` is Rego 0-based (`input.roles[0]` is the first element).
+
+### Tests
+
+- [`./ci`](ci) now includes `t/access.t`.
+
 ## [0.0.1] — 2026-08-22
 
 `prove t/sanity.t t/not.t` is green (the original `v0.0.1` bar). Also green: `t/scalars.t` and all `t/cmp_*.t`. Still a developer preview; GitHub release is a **pre-release**.

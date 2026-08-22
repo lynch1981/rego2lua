@@ -51,6 +51,14 @@ check("dot chain through miss", is_undef(rt.dot(rt.dot(input, "nope"), "name")))
 local obj_null = { x = rt.NULL }
 check("dot returns NULL as defined", rawequal(rt.dot(obj_null, "x"), rt.NULL))
 
+local roles = { "admin", "user" }
+check("dot array 0", rt.dot(roles, 0) == "admin")
+check("dot array 1", rt.dot(roles, 1) == "user")
+check("dot array oob", is_undef(rt.dot(roles, 2)))
+check("dot array neg", is_undef(rt.dot(roles, -1)))
+check("dot object string 0", rt.dot({ ["0"] = "x" }, "0") == "x")
+check("dot object number 0", is_undef(rt.dot({ ["0"] = "x" }, 0)))
+
 ------------------------------------------------------------
 -- equal / neq via call_builtin
 ------------------------------------------------------------

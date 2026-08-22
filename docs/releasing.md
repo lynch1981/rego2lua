@@ -17,7 +17,7 @@ Product version is SemVer (`MAJOR.MINOR.PATCH`). The **git tag** adds a `v` pref
 |-----|---------|
 | `v0.0.1-dev` | First snapshot (translator exists; `sanity.t` 9/11 at tag time) |
 | `v0.0.1` | **This tag.** `sanity` / `not` / `scalars` / `cmp_*` green |
-| `v0.0.2` | Remaining `t/access.t` (array index) and/or `t/membership.t` (`in`) |
+| `v0.0.2` | `t/membership.t` (`in` / scan) |
 | `v0.1.0` | First advertised usable subset (`./go` green, or a written subset note) |
 
 Stay on GitHub **pre-releases** until `v0.1.0`. Never retag; bump `VERSION` in a commit, then tag that commit.
@@ -41,7 +41,7 @@ Pull requests run [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Dir
 
 The job installs the same Debian packages as local development (`luajit`, `lua-cjson`, `libtest-base-perl`), then installs the official OPA CLI with [`open-policy-agent/setup-opa@v2`](https://github.com/open-policy-agent/setup-opa) pinned to **1.18.2**. That puts `opa` on `PATH` so `./rego2lua` can run `opa build -t plan` — the same frontend as a developer laptop. System `python3` runs the translator. The pin exists because plan JSON is the compiler interface; do not float `latest`.
 
-The required bar is [`./ci`](../ci) (`prove t/runtime.t t/sanity.t t/not.t t/scalars.t t/cmp_*.t`). [`./go`](../go) is the full suite and is **not** the gate until it is green. When a suite goes fully green, add it to `./ci` and mention it in the README.
+The required bar is [`./ci`](../ci) (`prove t/runtime.t t/sanity.t t/not.t t/scalars.t t/access.t t/cmp_*.t`). [`./go`](../go) is the full suite and is **not** the gate until it is green. When a suite goes fully green, add it to `./ci` and mention it in the README.
 
 ## Not published yet
 
