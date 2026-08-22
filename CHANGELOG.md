@@ -9,7 +9,7 @@ Pre-releases use a SemVer suffix (`-dev`). See [`docs/releasing.md`](docs/releas
 
 ### Added
 
-- GitHub Actions CI on pull requests ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): Ubuntu 24.04, OPA 1.18.2, required bar [`./ci`](ci) (`t/runtime.t`, `t/sanity.t`, `t/cmp_eq.t`).
+- GitHub Actions CI on pull requests ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): Ubuntu 24.04, OPA 1.18.2, required bar [`./ci`](ci) (`t/runtime.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/cmp_*.t`).
 
 ## [0.0.1-dev] — 2026-08-17
 
