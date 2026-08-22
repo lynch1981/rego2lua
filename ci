@@ -2,7 +2,7 @@
 # Required CI bar. Expand when a suite goes fully green.
 # Full suite (not yet green): ./go
 
-prove \
+prove -j "$(nproc)" \
   t/runtime.t \
   t/sanity.t \
   t/not.t \

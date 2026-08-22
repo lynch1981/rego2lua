@@ -1,6 +1,6 @@
 #!/bin/sh
 # Runtime helpers first, then policy fixtures (sanity → features → compares).
-prove \
+prove -j "$(nproc)" \
   t/runtime.t \
   t/sanity.t \
   t/not.t \
