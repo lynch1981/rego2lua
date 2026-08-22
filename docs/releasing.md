@@ -41,7 +41,7 @@ Pull requests run [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Dir
 
 The job installs the same Debian packages as local development (`luajit`, `lua-cjson`, `libtest-base-perl`), then installs the official OPA CLI with [`open-policy-agent/setup-opa@v2`](https://github.com/open-policy-agent/setup-opa) pinned to **1.18.2**. That puts `opa` on `PATH` so `./rego2lua` can run `opa build -t plan` — the same frontend as a developer laptop. System `python3` runs the translator. The pin exists because plan JSON is the compiler interface; do not float `latest`.
 
-The required bar is [`./ci`](../ci) (`prove t/runtime.t t/sanity.t t/cmp_*.t t/not.t t/scalars.t`). [`./go`](../go) is the full suite and is **not** the gate until it is green. When a suite goes fully green, add it to `./ci` and mention it in the README.
+The required bar is [`./ci`](../ci) (`prove t/runtime.t t/sanity.t t/not.t t/scalars.t t/cmp_*.t`). [`./go`](../go) is the full suite and is **not** the gate until it is green. When a suite goes fully green, add it to `./ci` and mention it in the README.
 
 ## Not published yet
 
