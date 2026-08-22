@@ -17,31 +17,31 @@ __DATA__
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lte := false
+default allow := false
 
-lte if {
+allow if {
     input.a <= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lte = false
+  local allow = false
   if type(a) == "number" and type(b) == "number" and a <= b then
-    lte = true
+    allow = true
   end
-  return lte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lte": true
+    "allow": true
 }
 
 
@@ -56,31 +56,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lte := false
+default allow := false
 
-lte if {
+allow if {
     input.a <= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lte = false
+  local allow = false
   if type(a) == "number" and type(b) == "number" and a <= b then
-    lte = true
+    allow = true
   end
-  return lte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lte": true
+    "allow": true
 }
 
 
@@ -95,31 +95,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lte := false
+default allow := false
 
-lte if {
+allow if {
     input.a <= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lte = false
+  local allow = false
   if type(a) == "number" and type(b) == "number" and a <= b then
-    lte = true
+    allow = true
   end
-  return lte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lte": false
+    "allow": false
 }
 
 
@@ -134,31 +134,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lte := false
+default allow := false
 
-lte if {
+allow if {
     input.a <= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lte = false
+  local allow = false
   if type(a) == "number" and type(b) == "number" and a <= b then
-    lte = true
+    allow = true
   end
-  return lte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lte": false
+    "allow": false
 }
 
 
@@ -172,29 +172,29 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lte := false
+default allow := false
 
-lte if {
+allow if {
     input.a <= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lte = false
+  local allow = false
   if type(a) == "number" and type(b) == "number" and a <= b then
-    lte = true
+    allow = true
   end
-  return lte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lte": false
+    "allow": false
 }
