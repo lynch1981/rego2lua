@@ -54,6 +54,8 @@ class _Translator:
         self._known_def: set[int] = set()
         self._need_label = False
         self._returned = False
+        self._fresh = 0
+        self._planned: dict[str, str] = {}
 
     def add_line(self, line: str = "") -> None:
         if line == "":
@@ -91,6 +93,16 @@ class _Translator:
     def mark_undef(self, slot: int) -> None:
         self._known_def.discard(slot)
 
+    def parse_nested(self, stmts: list[dict[str, Any]]):
+        return [parse_stmt(self, n) for n in stmts]
+
+    def fresh_label(self, prefix: str) -> str:
+        self._fresh += 1
+        return f"lbl_{prefix}_{self._fresh}"
+
+    def planned_func_lua(self, name: str) -> str | None:
+        return self._planned.get(name)
+
     def run(self) -> str:
         pkg = lua_ident(self.package)
         funcs = (self.plan.get("funcs") or {}).get("funcs")
@@ -103,13 +115,24 @@ class _Translator:
         self.add_line(f"local {pkg} = {{}}")
         self.add_line()
 
+        lua_names: list[str] = []
+        self._planned = {}
         for fn in funcs:
-            rego_fn = _rego_func_name(fn)
+            lua_name = _rego_func_name(fn)
+            lua_names.append(lua_name)
+            ir_name = fn.get("name")
+            if isinstance(ir_name, str) and ir_name:
+                self._planned[ir_name] = lua_name
+        self.add_line("local " + ", ".join(lua_names))
+        self.add_line()
+
+        for fn in funcs:
+            lua_name = _rego_func_name(fn)
             rule = lua_ident(_rule_name(fn))
             self._emit_func(fn)
             self.add_line(f"function {pkg}.{rule}(input, data)")
             self.indent += 1
-            self.add_line(f"return {rego_fn}(input, data)")
+            self.add_line(f"return {lua_name}(input, data)")
             self.indent -= 1
             self.add_line("end")
             self.add_line()
@@ -132,7 +155,7 @@ class _Translator:
             self.decl_local(func["return"], f"{name} return")
         parsed = [[parse_stmt(self, n) for n in (b.get("stmts") or [])] for b in blocks]
 
-        self.add_line(f"local function {name}(input, data)")
+        self.add_line(f"{name} = function(input, data)")
         self.indent += 1
         for i in range(0, self.max_slot + 1):
             if i == 0:
