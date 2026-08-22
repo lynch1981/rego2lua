@@ -81,7 +81,7 @@ Regression tests use OpenResty-style Perl `Test::Base` files. Each file ends wit
 | `data` | yes* | JSON **data** document. This is OPA/Rego `data` — shared base facts the policy may read. Use `{}` when unused. |
 | `Rego` | **yes** | Full Rego policy source. This is the **compiler input** for `rego2lua`. |
 | `ref_lua` | bootstrap | Hand-written **reference Lua** that implements the same policy. Used only when `rego2lua` is not built yet, so tests can still check behavior. Not the primary success criterion. Generated modules must use `rule(input, data)`; bootstrap refs may omit `data` if unused (the harness still passes both). |
-| `out` | **yes** | Expected evaluation result as JSON. Keys are **rule names**, values are rule results (e.g. `{ "eq": false }`). |
+| `out` | **yes** | Expected evaluation result as JSON. Keys are **rule names**, values are rule results (e.g. `{ "allow": false }`). |
 | `ONLY` | debug | **Test::Base** built-in: run only this block. The harness **prints the Lua under test** and writes `tmp/{policy.lua,input.json,data.json,run.sh}` so you can re-eval with `./tmp/run.sh`. Remove before commit. |
 
 \* If `input` or `data` is omitted or empty, the harness treats it as `{}`.
@@ -113,31 +113,31 @@ Success is matching `out`, not matching `ref_lua` source text.
 {
 }
 --- Rego
-package cmp
+package foo
 
-default eq := false
+default allow := false
 
-eq if {
+allow if {
     input.a == input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.eq(input, data)
+function foo.allow(input, data)
   input = input or {}
   local a = input.a
   local b = input.b
-  local eq = false
+  local allow = false
   if a ~= nil and b ~= nil and a == b then
-    eq = true
+    allow = true
   end
-  return eq
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "eq": false
+    "allow": false
 }
 ```
 
