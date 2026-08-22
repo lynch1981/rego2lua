@@ -32,7 +32,9 @@ function foo.allow(input)
   local a = input.a
   local b = input.b
   local allow = false
-  if type(a) == "number" and type(b) == "number" and a > b then
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a > b then
     allow = true
   end
   return allow
@@ -71,7 +73,9 @@ function foo.allow(input)
   local a = input.a
   local b = input.b
   local allow = false
-  if type(a) == "number" and type(b) == "number" and a > b then
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a > b then
     allow = true
   end
   return allow
@@ -110,7 +114,9 @@ function foo.allow(input)
   local a = input.a
   local b = input.b
   local allow = false
-  if type(a) == "number" and type(b) == "number" and a > b then
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a > b then
     allow = true
   end
   return allow
@@ -149,7 +155,9 @@ function foo.allow(input)
   local a = input.a
   local b = input.b
   local allow = false
-  if type(a) == "number" and type(b) == "number" and a > b then
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a > b then
     allow = true
   end
   return allow
@@ -163,7 +171,7 @@ return foo
 
 
 
-=== TEST 5: strings (not numbers)
+=== TEST 5: strings
 --- input
 {
     "a": "b",
@@ -188,7 +196,9 @@ function foo.allow(input)
   local a = input.a
   local b = input.b
   local allow = false
-  if type(a) == "number" and type(b) == "number" and a > b then
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a > b then
     allow = true
   end
   return allow
@@ -197,7 +207,7 @@ end
 return foo
 --- out
 {
-    "allow": false
+    "allow": true
 }
 
 
@@ -226,7 +236,9 @@ function foo.allow(input)
   local a = input.a
   local b = input.b
   local allow = false
-  if type(a) == "number" and type(b) == "number" and a > b then
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a > b then
     allow = true
   end
   return allow
