@@ -68,7 +68,7 @@ Also: [`docs/ir2lua-guide.md`](../docs/ir2lua-guide.md) §8 · slices: [`docs/re
 1. **Facade only** — one load path: `rego_rt.lua`.
 2. **Slots** — every IR local is `rt.UNDEF` or a Rego value. Do not leave Lua `nil` if you use `is_def` (`is_def(nil)` is true today).
 3. **UNDEF ≠ NULL ≠ nil** — missing path → `UNDEF`; JSON null → `rt.NULL`.
-4. **IR statement → kernel** — `DotStmt` → `rt.dot`; `EqualStmt` → `rt.values_equal`; `Make*` → `make_*`; definedness → `is_def` / `is_undef`.
+4. **IR statement → kernel** — `DotStmt` → `rt.dot`; `EqualStmt` → `rt.values_equal`; `Make*` → `make_*`; definedness → `is_def` / `is_undef`. Array keys in IR are Rego **0-based**; `rt.dot` maps them onto Lua/cjson **1-based** storage.
 5. **CallStmt → `local def, v = rt.call_builtin(name, …)`** — never a single assignment (`local x = call_builtin(...)` captures only `defined`).
 6. **If `not def`** — stmt is undefined; skip the rest of the block. Do not use `v`.
 7. **Boolean CallStmt** — `if def and v then` (matched). `rt.is_ok` is for a **slot** that already holds a 3-valued raw result, not for wrapping `call_builtin`.
@@ -156,7 +156,6 @@ These are **runtime** mismatches with the codegen contract / Rego meaning. Do **
 
 | Topic | Contract / Rego | Runtime today |
 |-------|-----------------|---------------|
-| Array **Dot** index | `DotStmt` → `rt.dot`; Rego arrays are 0-based | `source[key]` as given; `0` misses a Lua/cjson 1-based array |
 | Empty JSON `[]` | `is_array` / `type_name` on `input` / `data` | cjson decodes `[]` and `{}` as the same untagged `{}`; empty is treated as **object** |
 | `to_number` strings | `call_builtin("to_number", x)` matches OPA | JSON-number grammar only; may reject OPA-accepted `"+3"`, `"3."` |
 

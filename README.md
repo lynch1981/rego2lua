@@ -16,7 +16,7 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 
 **Developer preview.** Tag [`v0.0.1`](https://github.com/lynch1981/rego2lua/releases/tag/v0.0.1). Changelog: [`CHANGELOG.md`](CHANGELOG.md). License: [BSD-2-Clause](LICENSE).
 
-Works today: `package`, `default`, `input.field == …`, implicit AND, `local :=`, nested object fields, `not`, `!=` / order compares, scalars (string / number / boolean / null). Required bar [`./ci`](ci): `t/runtime.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/cmp_*.t`. Still failing: array index (`t/access.t`), `in` / `some` (`t/membership.t`). `./go` is **not** green.
+Works today: `package`, `default`, `input.field == …`, implicit AND, `local :=`, nested object and array index, `not`, `!=` / order compares, scalars (string / number / boolean / null). Required bar [`./ci`](ci): `t/runtime.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/access.t`, `t/cmp_*.t`. Still failing: `in` / `some` (`t/membership.t`). `./go` is **not** green.
 
 Generated Lua loads `runtime/rego_rt.lua` with a CWD-relative `loadfile`. Evaluate from the **repo root**.
 
