@@ -17,31 +17,33 @@ __DATA__
 {
 }
 --- Rego
-package cmp
+package foo
 
-default gte := false
+default allow := false
 
-gte if {
+allow if {
     input.a >= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.gte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local gte = false
-  if type(a) == "number" and type(b) == "number" and a >= b then
-    gte = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a >= b then
+    allow = true
   end
-  return gte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "gte": true
+    "allow": true
 }
 
 
@@ -56,31 +58,33 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default gte := false
+default allow := false
 
-gte if {
+allow if {
     input.a >= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.gte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local gte = false
-  if type(a) == "number" and type(b) == "number" and a >= b then
-    gte = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a >= b then
+    allow = true
   end
-  return gte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "gte": true
+    "allow": true
 }
 
 
@@ -95,36 +99,38 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default gte := false
+default allow := false
 
-gte if {
+allow if {
     input.a >= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.gte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local gte = false
-  if type(a) == "number" and type(b) == "number" and a >= b then
-    gte = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a >= b then
+    allow = true
   end
-  return gte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "gte": false
+    "allow": false
 }
 
 
 
-=== TEST 4: strings (not numbers)
+=== TEST 4: strings
 --- input
 {
     "a": "b",
@@ -134,31 +140,33 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default gte := false
+default allow := false
 
-gte if {
+allow if {
     input.a >= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.gte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local gte = false
-  if type(a) == "number" and type(b) == "number" and a >= b then
-    gte = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a >= b then
+    allow = true
   end
-  return gte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "gte": false
+    "allow": true
 }
 
 
@@ -172,29 +180,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default gte := false
+default allow := false
 
-gte if {
+allow if {
     input.a >= input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.gte(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local gte = false
-  if type(a) == "number" and type(b) == "number" and a >= b then
-    gte = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a >= b then
+    allow = true
   end
-  return gte
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "gte": false
+    "allow": false
 }

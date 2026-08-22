@@ -17,31 +17,33 @@ __DATA__
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lt := false
+default allow := false
 
-lt if {
+allow if {
     input.a < input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lt(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lt = false
-  if type(a) == "number" and type(b) == "number" and a < b then
-    lt = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a < b then
+    allow = true
   end
-  return lt
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lt": true
+    "allow": true
 }
 
 
@@ -56,31 +58,33 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lt := false
+default allow := false
 
-lt if {
+allow if {
     input.a < input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lt(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lt = false
-  if type(a) == "number" and type(b) == "number" and a < b then
-    lt = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a < b then
+    allow = true
   end
-  return lt
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lt": false
+    "allow": false
 }
 
 
@@ -95,31 +99,33 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lt := false
+default allow := false
 
-lt if {
+allow if {
     input.a < input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lt(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lt = false
-  if type(a) == "number" and type(b) == "number" and a < b then
-    lt = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a < b then
+    allow = true
   end
-  return lt
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lt": false
+    "allow": false
 }
 
 
@@ -134,36 +140,38 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lt := false
+default allow := false
 
-lt if {
+allow if {
     input.a < input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lt(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lt = false
-  if type(a) == "number" and type(b) == "number" and a < b then
-    lt = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a < b then
+    allow = true
   end
-  return lt
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lt": true
+    "allow": true
 }
 
 
 
-=== TEST 5: strings (not numbers)
+=== TEST 5: strings
 --- input
 {
     "a": "a",
@@ -173,31 +181,33 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lt := false
+default allow := false
 
-lt if {
+allow if {
     input.a < input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lt(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lt = false
-  if type(a) == "number" and type(b) == "number" and a < b then
-    lt = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a < b then
+    allow = true
   end
-  return lt
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lt": false
+    "allow": true
 }
 
 
@@ -211,29 +221,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default lt := false
+default allow := false
 
-lt if {
+allow if {
     input.a < input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.lt(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local lt = false
-  if type(a) == "number" and type(b) == "number" and a < b then
-    lt = true
+  local allow = false
+  if type(a) == type(b)
+     and (type(a) == "number" or type(a) == "string")
+     and a < b then
+    allow = true
   end
-  return lt
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "lt": false
+    "allow": false
 }

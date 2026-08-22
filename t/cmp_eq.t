@@ -17,31 +17,31 @@ __DATA__
 {
 }
 --- Rego
-package cmp
+package foo
 
-default eq := false
+default allow := false
 
-eq if {
+allow if {
     input.a == input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.eq(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local eq = false
+  local allow = false
   if a ~= nil and b ~= nil and a == b then
-    eq = true
+    allow = true
   end
-  return eq
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "eq": false
+    "allow": false
 }
 
 
@@ -56,31 +56,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default eq := false
+default allow := false
 
-eq if {
+allow if {
     input.a == input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.eq(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local eq = false
+  local allow = false
   if a ~= nil and b ~= nil and a == b then
-    eq = true
+    allow = true
   end
-  return eq
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "eq": true
+    "allow": true
 }
 
 
@@ -95,31 +95,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default eq := false
+default allow := false
 
-eq if {
+allow if {
     input.a == input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.eq(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local eq = false
+  local allow = false
   if a ~= nil and b ~= nil and a == b then
-    eq = true
+    allow = true
   end
-  return eq
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "eq": true
+    "allow": true
 }
 
 
@@ -134,31 +134,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default eq := false
+default allow := false
 
-eq if {
+allow if {
     input.a == input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.eq(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local eq = false
+  local allow = false
   if a ~= nil and b ~= nil and a == b then
-    eq = true
+    allow = true
   end
-  return eq
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "eq": false
+    "allow": false
 }
 
 
@@ -172,31 +172,31 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default eq := false
+default allow := false
 
-eq if {
+allow if {
     input.a == input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.eq(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local eq = false
+  local allow = false
   if a ~= nil and b ~= nil and a == b then
-    eq = true
+    allow = true
   end
-  return eq
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "eq": false
+    "allow": false
 }
 
 
@@ -209,29 +209,29 @@ return cmp
 {
 }
 --- Rego
-package cmp
+package foo
 
-default eq := false
+default allow := false
 
-eq if {
+allow if {
     input.a == input.b
 }
 --- ref_lua
-local cmp = {}
+local foo = {}
 
-function cmp.eq(input)
+function foo.allow(input)
   input = input or {}
   local a = input.a
   local b = input.b
-  local eq = false
+  local allow = false
   if a ~= nil and b ~= nil and a == b then
-    eq = true
+    allow = true
   end
-  return eq
+  return allow
 end
 
-return cmp
+return foo
 --- out
 {
-    "eq": false
+    "allow": false
 }

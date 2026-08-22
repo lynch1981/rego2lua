@@ -171,6 +171,7 @@ Notes:
 
 - Section name is `ref_lua` (underscore). `ref-lua` is wrong (Test::Base treats `-` as a filter).
 - Leave **three blank lines** between `=== TEST` cases (OpenResty style).
+- Do not name rules after comparison builtins (`eq`, `equal`, `neq`, `gt`, `gte`, `lt`, `lte`). OPA treats that as shadowing (`rego_type_error: function data.<pkg>.gt has arity 0, got 2 arguments`). Use `allow` like the other suites.
 
 ### What the harness does today
 
