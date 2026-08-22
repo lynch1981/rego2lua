@@ -7,9 +7,38 @@ Pre-releases use a SemVer suffix (`-dev`). See [`docs/releasing.md`](docs/releas
 
 ## Unreleased
 
+## [0.0.1] — 2026-08-22
+
+`prove t/sanity.t t/not.t` is green (the original `v0.0.1` bar). Also green: `t/scalars.t` and all `t/cmp_*.t`. Still a developer preview; GitHub release is a **pre-release**.
+
 ### Added
 
-- GitHub Actions CI on pull requests ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): Ubuntu 24.04, OPA 1.18.2, required bar [`./ci`](ci) (`t/runtime.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/cmp_*.t`).
+- IR statements: `NotStmt`, `CallStmt`, `NotEqualStmt`, `BlockStmt`, `ScanStmt`, `MakeNumberRefStmt`, `MakeNullStmt`.
+- GitHub Actions CI on pull requests ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): Ubuntu 24.04, OPA 1.18.2. `./ci` / `./go` run `prove -j "$(nproc)"`.
+
+### Supported language (this tag)
+
+`package`, `default <rule> := false`, `if` body with field access, `==` / `!=` / order compares, implicit AND, `local :=`, `not`, scalars (string / number / boolean / null).
+
+### Tests
+
+| Suite | This tag |
+|-------|----------|
+| `t/runtime.t` | pass |
+| `t/sanity.t` | pass |
+| `t/not.t` | pass |
+| `t/scalars.t` | pass |
+| `t/cmp_*.t` | pass |
+| `t/access.t` | fail (array index) |
+| `t/membership.t` | fail (`in` / scan) |
+
+Required bar [`./ci`](ci): `t/runtime.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/cmp_*.t`. [`./go`](go) is **not** green.
+
+### Known limitations
+
+- Generated Lua loads the runtime with `loadfile("runtime/rego_rt.lua")`. Evaluate from the **repo root** (or make that path resolve).
+- Unknown IR statement types fail at generate time (fail closed).
+- Not an OPA replacement: no array index, `in` / `some` / working scan, or a full builtin catalog.
 
 ## [0.0.1-dev] — 2026-08-17
 
@@ -44,4 +73,5 @@ First tagged **developer snapshot**. Not a complete Rego compiler. `prove t/sani
 - Unknown IR statement types fail at generate time (fail closed).
 - Not an OPA replacement: no `not`, `!=` / order compares, number/null IR constants, array index, `in` / `some` / scan, or planned `CallStmt`.
 
+[0.0.1]: https://github.com/lynch1981/rego2lua/releases/tag/v0.0.1
 [0.0.1-dev]: https://github.com/lynch1981/rego2lua/releases/tag/v0.0.1-dev

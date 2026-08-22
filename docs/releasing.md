@@ -8,28 +8,28 @@ Product version is SemVer (`MAJOR.MINOR.PATCH`). The **git tag** adds a `v` pref
 
 | Place | Example |
 |-------|---------|
-| [`VERSION`](../VERSION), `ir2lua.__version__`, `rego2lua --version` | `0.0.1-dev` |
-| Annotated git tag / GitHub Release | `v0.0.1-dev` |
+| [`VERSION`](../VERSION), `ir2lua.__version__`, `rego2lua --version` | `0.0.1` |
+| Annotated git tag / GitHub Release | `v0.0.1` |
 
 ### Planned sequence
 
 | Tag | Meaning |
 |-----|---------|
-| `v0.0.1-dev` | This snapshot (translator exists; `sanity.t` 9/11 at tag time) |
-| `v0.0.1` | `prove t/sanity.t t/not.t` green |
-| `v0.0.2` | Next unlocked suite (scalars or remaining access) |
+| `v0.0.1-dev` | First snapshot (translator exists; `sanity.t` 9/11 at tag time) |
+| `v0.0.1` | **This tag.** `sanity` / `not` / `scalars` / `cmp_*` green |
+| `v0.0.2` | Remaining `t/access.t` (array index) and/or `t/membership.t` (`in`) |
 | `v0.1.0` | First advertised usable subset (`./go` green, or a written subset note) |
 
 Stay on GitHub **pre-releases** until `v0.1.0`. Never retag; bump `VERSION` in a commit, then tag that commit.
 
-## This snapshot (`0.0.1-dev`)
+## This snapshot (`0.0.1`)
 
-1. Docs + license + version land on `main`.
-2. `prove t/runtime.t t/sanity.t t/cmp_eq.t` (green). `prove t/not.t` fails until `NotStmt`.
+1. Bump [`VERSION`](../VERSION) and `ir2lua.__version__` to `0.0.1` on `main`. Cut [`CHANGELOG.md`](../CHANGELOG.md).
+2. `./ci` green (`t/runtime.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/cmp_*.t`). `./go` is not the gate (`t/access.t`, `t/membership.t` still fail).
 3. Annotated tag:
 
    ```bash
-   git tag -a v0.0.1-dev -m "rego2lua 0.0.1-dev: first IR→Lua developer snapshot"
+   git tag -a v0.0.1 -m "rego2lua 0.0.1: not, scalars, and comparison suites green"
    ```
 
 4. `git push origin main --tags`.

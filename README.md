@@ -12,9 +12,9 @@ Rego  →  OPA (`opa build -t plan`)  →  plan.json (IR)  →  rego2lua  →  L
 
 Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGENTS.md`](AGENTS.md). Tags and CI: [`docs/releasing.md`](docs/releasing.md).
 
-## Status (0.0.1-dev)
+## Status (0.0.1)
 
-**Developer preview.** Tag [`v0.0.1-dev`](https://github.com/lynch1981/rego2lua/releases/tag/v0.0.1-dev). Changelog: [`CHANGELOG.md`](CHANGELOG.md). License: [BSD-2-Clause](LICENSE).
+**Developer preview.** Tag [`v0.0.1`](https://github.com/lynch1981/rego2lua/releases/tag/v0.0.1). Changelog: [`CHANGELOG.md`](CHANGELOG.md). License: [BSD-2-Clause](LICENSE).
 
 Works today: `package`, `default`, `input.field == …`, implicit AND, `local :=`, nested object fields, `not`, `!=` / order compares, scalars (string / number / boolean / null). Required bar [`./ci`](ci): `t/runtime.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/cmp_*.t`. Still failing: array index (`t/access.t`), `in` / `some` (`t/membership.t`). `./go` is **not** green.
 
