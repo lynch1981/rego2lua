@@ -509,7 +509,7 @@ Bootstrap order (same as `./go`):
 | 5 | `membership.t` | `ScanStmt` / `in` |
 | 6 | `cmp_*.t` | compare stmts |
 
-Until the binary exists, `t::Rego` still falls back to `--- ref_lua`.
+The harness uses `./rego2lua` when present and falls back to `--- ref_lua` otherwise.
 
 ---
 
@@ -642,11 +642,13 @@ These ranks are **IR statement order** for codegen (unlock `t/*.t`). They are **
 
 ## 14. Checklist
 
-- [x] Minimal runtime (slice **1.1.1**): `runtime/` layers + `t/runtime.t`  
-- [ ] Generate `plan.json` for `example.rego` / a `sanity` policy  
-- [ ] Load IR in Python; print plan names and stmt type histogram  
-- [ ] Hand-trace the §4 plan + func locals once  
-- [ ] Implement **must** IR statements (codegen) on top of the runtime  
-- [ ] Emit `package` module API matching product shape  
-- [ ] Green: first case of `t/sanity.t` via IR path  
-- [ ] Grow statement coverage until `./go` is IR-backed  
+- [x] Minimal runtime (slice **1.1.1**): `runtime/` layers + `t/runtime.t`
+- [x] Generate `plan.json` (`opa_plan.py` / `./rego2lua -d FILE`)
+- [x] Load IR in Python (`ir2lua.translate` walks funcs → blocks → stmts)
+- [x] Hand-trace the §4 plan + func locals ([`rego-ir-by-example/01-spine-allow.md`](./rego-ir-by-example/01-spine-allow.md))
+- [x] Implement **must** IR statements for compiled funcs (codegen on `runtime/`)
+- [x] Emit `package` module API matching product shape (`pkg.rule(input, data)`)
+- [x] Green: `t/sanity.t` via IR path
+- [ ] Grow statement coverage until `./go` is IR-backed (`t/membership.t`: `in` / `internal.member_2`)
+
+Codegen wraps **funcs** as `pkg.rule(input, data)`, so `MakeObjectStmt` / `ObjectInsertStmt` / `ResultSetAddStmt` (plan result-set packing in §11) are unused. 
