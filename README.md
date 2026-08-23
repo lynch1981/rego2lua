@@ -28,6 +28,8 @@ Needs `opa`, Python 3, and LuaJIT 2.1 on `PATH`.
 git clone https://github.com/lynch1981/rego2lua.git
 cd rego2lua
 ./rego2lua path/to/policy.rego > policy.lua
+# optional: also write the OPA plan IR the translator used
+./rego2lua -d plan.json path/to/policy.rego > policy.lua
 # evaluate from repo root so runtime/rego_rt.lua resolves
 luajit t/eval_pkg.lua policy.lua '{"method":"GET"}' '{}'
 ```
@@ -82,13 +84,13 @@ Regression tests use OpenResty-style Perl `Test::Base` files. Each file ends wit
 | `Rego` | **yes** | Full Rego policy source. This is the **compiler input** for `rego2lua`. |
 | `ref_lua` | bootstrap | Hand-written **reference Lua** that implements the same policy. Used only when `rego2lua` is not built yet, so tests can still check behavior. Not the primary success criterion. Generated modules must use `rule(input, data)`; bootstrap refs may omit `data` if unused (the harness still passes both). |
 | `out` | **yes** | Expected evaluation result as JSON. Keys are **rule names**, values are rule results (e.g. `{ "allow": false }`). |
-| `ONLY` | debug | **Test::Base** built-in: run only this block. The harness **prints the Lua under test** and writes `tmp/{policy.lua,input.json,data.json,run.sh}` so you can re-eval with `./tmp/run.sh`. Remove before commit. |
+| `ONLY` | debug | **Test::Base** built-in: run only this block. The harness **prints the Lua under test** and writes `tmp/{policy.lua,input.json,data.json,plan.json,run.sh}` so you can re-eval with `./tmp/run.sh`. Remove before commit. |
 
 \* If `input` or `data` is omitted or empty, the harness treats it as `{}`.
 
 ### Debugging with `ONLY`
 
-Stderr shows the generated (or reference) Lua. The harness also dumps the module plus `input` / `data` JSON to `tmp/` (gitignored) and writes `tmp/run.sh`, which re-runs the same `t/eval_pkg.lua` evaluation from the repo root. Do not leave `ONLY` in committed tests.
+Stderr shows the generated (or reference) Lua. The harness also dumps the module plus `input` / `data` JSON and the OPA `plan.json` to `tmp/` (gitignored) and writes `tmp/run.sh`, which re-runs the same `t/eval_pkg.lua` evaluation from the repo root. Do not leave `ONLY` in committed tests.
 
 ### How a case is judged
 

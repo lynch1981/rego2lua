@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -13,33 +14,32 @@ from ir2lua.opa_plan import OpaError, build_ir_plan
 from ir2lua.translate import TranslateError, translate_plan
 
 
-def compile_rego(rego_path: str) -> str:
-    plan, package = build_ir_plan(rego_path)
-    return translate_plan(plan, package)
-
-
-def _usage(to) -> None:
-    to.write("usage: rego2lua <policy.rego>\n")
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        prog="rego2lua",
+        usage="rego2lua [-d FILE] <policy.rego>",
+        description="Compile a Rego policy to Lua via OPA plan IR.",
+    )
+    p.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"rego2lua {__version__}",
+    )
+    p.add_argument("-d", "--dump-plan", metavar="FILE")
+    p.add_argument("policy", metavar="policy.rego")
+    return p.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = sys.argv[1:] if argv is None else argv
-    if len(args) != 1:
-        _usage(sys.stderr)
-        return 2
-    arg = args[0]
-    if arg in ("-V", "--version"):
-        sys.stdout.write(f"rego2lua {__version__}\n")
-        return 0
-    if arg in ("-h", "--help"):
-        _usage(sys.stdout)
-        return 0
-    if not Path(arg).is_file():
-        sys.stderr.write(f"rego2lua: not a file: {arg}\n")
+    args = _parse_args(argv)
+    if not Path(args.policy).is_file():
+        sys.stderr.write(f"rego2lua: not a file: {args.policy}\n")
         return 2
     try:
-        lua = compile_rego(arg)
-    except (OpaError, TranslateError) as e:
+        plan, package = build_ir_plan(args.policy, dump_plan=args.dump_plan)
+        lua = translate_plan(plan, package)
+    except (OpaError, TranslateError, OSError) as e:
         sys.stderr.write(f"rego2lua: {e}\n")
         return 1
     sys.stdout.write(lua)

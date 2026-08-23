@@ -67,11 +67,23 @@ sub _run_block ($) {
     my ($lua_src, $src_label);
     if (-e $REGO2LUA && -x $REGO2LUA) {
         _write($rego_path, $rego);
-        my $cmd = _q($REGO2LUA) . ' ' . _q($rego_path);
+        my $cmd;
+        my $plan_path;
+        if (!defined $block->ONLY) {
+            $cmd = _q($REGO2LUA) . ' ' . _q($rego_path);
+        }
+        else {
+            $plan_path = File::Spec->catfile(_only_tmp_dir(), 'plan.json');
+            $cmd = _q($REGO2LUA) . ' --dump-plan ' . _q($plan_path)
+                 . ' ' . _q($rego_path);
+        }
         my $out = `$cmd 2>&1`;
         my $status = $?;
         if ($status != 0) {
             fail("$name: rego2lua failed (exit $status): $out");
+            if (defined $plan_path && -f $plan_path) {
+                print STDERR "dumped plan IR to $plan_path\n";
+            }
             return;
         }
         $lua_src = $out;
@@ -149,10 +161,15 @@ sub _show_lua ($$$) {
     print STDERR "======== end lua ========\n";
 }
 
-sub _dump_only ($$$) {
-    my ($lua_src, $input_json, $data_json) = @_;
+sub _only_tmp_dir () {
     my $dir = File::Spec->catdir($ROOT, 'tmp');
     make_path($dir);
+    return $dir;
+}
+
+sub _dump_only ($$$) {
+    my ($lua_src, $input_json, $data_json) = @_;
+    my $dir = _only_tmp_dir();
 
     my $policy = File::Spec->catfile($dir, 'policy.lua');
     my $input  = File::Spec->catfile($dir, 'input.json');
@@ -166,7 +183,7 @@ sub _dump_only ($$$) {
     chmod 0755, $run or die "chmod $run: $!";
 
     print STDERR "dumped ONLY artifacts to $dir\n";
-    print STDERR "  policy.lua  input.json  data.json  run.sh\n";
+    print STDERR "  policy.lua  input.json  data.json  plan.json  run.sh\n";
     print STDERR "re-run: $run\n";
 }
 

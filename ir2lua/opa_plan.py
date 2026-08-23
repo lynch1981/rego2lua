@@ -37,7 +37,10 @@ def read_package_name(rego_path: str | Path) -> str:
     raise OpaError(f"no package line in {path}")
 
 
-def extract_plan_json(bundle_path: str | Path) -> dict[str, Any]:
+def extract_plan_json(
+    bundle_path: str | Path,
+    dest: str | Path | None = None,
+) -> dict[str, Any]:
     with tarfile.open(bundle_path, "r:gz") as tar:
         for member in tar.getmembers():
             name = member.name.lstrip("./")
@@ -45,11 +48,17 @@ def extract_plan_json(bundle_path: str | Path) -> dict[str, Any]:
                 fh = tar.extractfile(member)
                 if fh is None:
                     continue
-                return json.loads(fh.read().decode("utf-8"))
+                raw = fh.read()
+                if dest is not None:
+                    Path(dest).write_bytes(raw)
+                return json.loads(raw.decode("utf-8"))
     raise OpaError("plan.json not found in opa bundle")
 
 
-def build_ir_plan(rego_path: str | Path) -> tuple[dict[str, Any], str]:
+def build_ir_plan(
+    rego_path: str | Path,
+    dump_plan: str | Path | None = None,
+) -> tuple[dict[str, Any], str]:
     """Build an OPA IR plan via ``opa build -t plan``. Returns ``(plan, package)``."""
     pkg = read_package_name(rego_path)
     entry = pkg.replace(".", "/")
@@ -71,5 +80,5 @@ def build_ir_plan(rego_path: str | Path) -> tuple[dict[str, Any], str]:
         if proc.returncode != 0:
             detail = (proc.stderr or proc.stdout or "").strip()
             raise OpaError(f"opa build failed (exit {proc.returncode}): {detail}")
-        plan = extract_plan_json(bundle)
+        plan = extract_plan_json(bundle, dest=dump_plan)
     return plan, pkg
