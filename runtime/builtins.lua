@@ -6,6 +6,7 @@
 -- rt.builtins[name]  — raw 3-valued impl (true | false | UNDEF | value)
 -- rt.call_builtin    — codegen: local def, v = rt.call_builtin(name, ...)
 --                      def is a boolean; v is the result only when def.
+-- Codegen allowlist: ir2lua/stmts/call.py IMPLEMENTED (keep in sync).
 
 return function(rt, priv)
   local reg = {

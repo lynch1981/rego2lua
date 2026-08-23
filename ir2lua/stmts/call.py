@@ -11,6 +11,32 @@ from typing import Any, ClassVar
 from ir2lua.operands import Operand, TranslateError, lua_string
 from ir2lua.stmts.ctx import Emit
 
+# IR names implemented in runtime/builtins.lua. Keep in sync.
+IMPLEMENTED = frozenset({
+    "equal",
+    "neq",
+    "gt",
+    "gte",
+    "lt",
+    "lte",
+    "is_string",
+    "is_number",
+    "is_boolean",
+    "is_null",
+    "is_array",
+    "is_object",
+    "is_set",
+    "type_name",
+    "to_number",
+    "plus",
+    "minus",
+    "mul",
+    "div",
+    "rem",
+    "abs",
+    "numbers.range",
+})
+
 
 @dataclass
 class CallStmt:
@@ -32,11 +58,14 @@ class CallStmt:
             ctx.resolve_operand(a, f"CallStmt arg {i}")
             for i, a in enumerate(raw_args)
         ]
+        planned = ctx.planned_func_lua(func)
+        if planned is None and func not in IMPLEMENTED:
+            raise TranslateError(f"unsupported builtin: {func}")
         return cls(
             func,
             args,
             ctx.decl_local(stmt.get("result"), "CallStmt result"),
-            ctx.planned_func_lua(func),
+            planned,
         )
 
     def emit(self, ctx: Emit, label: str) -> None:

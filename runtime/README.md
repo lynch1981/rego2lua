@@ -124,7 +124,7 @@ Loads only `runtime/rego_rt.lua`. Tests use kernel APIs + `call_builtin` (not `r
 |--------------|--------|
 | Value / tagging | `value.lua` |
 | DotStmt | `dot.lua` |
-| New CallStmt type/number/compare op | implement on `priv` in the right layer + register in `builtins.lua` |
+| New CallStmt type/number/compare op | implement on `priv` in the right layer, register in `builtins.lua`, add the IR name to `ir2lua/stmts/call.py` `IMPLEMENTED` |
 | New IR stmt helper for codegen | install on `rt` in the right layer; document here |
 
 Then add a check in `t/runtime_rt.lua` and run `prove t/runtime.t`.

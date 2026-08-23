@@ -10,6 +10,7 @@ Pre-releases use a SemVer suffix (`-dev`). See [`docs/releasing.md`](docs/releas
 ### Added
 
 - CLI `--dump-plan` / `-d FILE` writes the OPA plan IR JSON before codegen.
+- Generate-time error when CallStmt names a builtin the runtime does not implement.
 
 ### Fixed
 
