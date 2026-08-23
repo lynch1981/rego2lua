@@ -37,16 +37,32 @@ sub _run_block ($) {
     my $input_json = _section($block, 'input');
     my $data_json  = _section($block, 'data');
     my $out_json   = _section($block, 'out');
+    my $err        = _section($block, 'err');
+
+    my $has_rego = defined $rego && _strip($rego) ne '';
+    my $has_out  = defined $out_json && _strip($out_json) ne '';
+    my $has_err  = defined $err && _strip($err) ne '';
+
+    if (!$has_rego) {
+        fail("$name: --- Rego is required");
+        return;
+    }
+    if ($has_out && $has_err) {
+        fail("$name: --- out and --- err are mutually exclusive");
+        return;
+    }
+    if (!$has_out && !$has_err) {
+        fail("$name: --- out or --- err is required");
+        return;
+    }
+
+    if ($has_err) {
+        _run_err($block, $name, $rego, _strip($err));
+        return;
+    }
 
     $input_json = '{}' if !defined $input_json || _strip($input_json) eq '';
     $data_json  = '{}' if !defined $data_json  || _strip($data_json)  eq '';
-
-    if (!defined $rego || _strip($rego) eq ''
-        || !defined $out_json || _strip($out_json) eq '')
-    {
-        fail("$name: --- Rego and --- out are required");
-        return;
-    }
 
     my ($input, $data, $want);
     eval {
@@ -136,6 +152,35 @@ sub _run_block ($) {
             "got:  " . encode_json($got) . "\n" .
             "want: " . encode_json($want)
         );
+}
+
+sub _run_err ($$$$) {
+    my ($block, $name, $rego, $want_err) = @_;
+
+    if (!(-e $REGO2LUA && -x $REGO2LUA)) {
+        SKIP: {
+            skip("$name: no rego2lua; --- err needs the compiler", 3);
+        }
+        return;
+    }
+
+    my $dir = tempdir(CLEANUP => 1);
+    my $rego_path = File::Spec->catfile($dir, 'policy.rego');
+    _write($rego_path, $rego);
+    my $cmd = _q($REGO2LUA) . ' ' . _q($rego_path);
+    my $got = `$cmd 2>&1`;
+    my $status = $?;
+
+    if (defined $block->ONLY) {
+        print STDERR "======== $name (rego2lua err) ========\n";
+        print STDERR $got;
+        print STDERR "\n" unless $got =~ /\n\z/;
+        print STDERR "======== end err ========\n";
+    }
+
+    ok($status != 0, "$name: rego2lua exits non-zero");
+    like($got, qr/opa check failed/, "$name: failed at opa check");
+    like($got, qr/\Q$want_err\E/, "$name: compiler output contains --- err");
 }
 
 sub _section ($$) {

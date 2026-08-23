@@ -1,7 +1,7 @@
 
 # Copyright (c) 2026, Lei Meng
 
-"""Shell out to OPA: Rego → plan.json."""
+"""Shell out to OPA: ``opa check --strict``, then ``opa build -t plan`` → plan.json."""
 
 from __future__ import annotations
 
@@ -55,11 +55,20 @@ def extract_plan_json(
     raise OpaError("plan.json not found in opa bundle")
 
 
+def check_rego(rego_path: str | Path) -> None:
+    """Parse and compile ``rego_path`` with ``opa check --strict``."""
+    proc = _run(["opa", "check", "--strict", str(rego_path)])
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "").strip()
+        raise OpaError(f"opa check failed (exit {proc.returncode}): {detail}")
+
+
 def build_ir_plan(
     rego_path: str | Path,
     dump_plan: str | Path | None = None,
 ) -> tuple[dict[str, Any], str]:
-    """Build an OPA IR plan via ``opa build -t plan``. Returns ``(plan, package)``."""
+    """Check Rego, then build an OPA IR plan. Returns ``(plan, package)``."""
+    check_rego(rego_path)
     pkg = read_package_name(rego_path)
     entry = pkg.replace(".", "/")
     with tempfile.TemporaryDirectory(prefix="rego2lua-") as tmp:

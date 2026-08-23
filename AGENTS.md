@@ -139,7 +139,7 @@ Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`)
 |------|------|
 | `VERSION` | Public version string (same as `ir2lua.__version__`) |
 | `./rego2lua` | CLI: Rego → IR → Lua |
-| `opa_plan.py` | Rego → IR (`opa build -t plan`) |
+| `opa_plan.py` | Rego → IR (`opa check --strict`, then `opa build -t plan`) |
 | `ir2lua/` | IR → Lua |
 | `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua); §8 = runtime |
 | `docs/releasing.md` | Tags, SemVer, GitHub pre-releases, CI |
@@ -159,7 +159,7 @@ Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`)
 
 ## Tests (`t/*.t`)
 
-OpenResty-style `Test::Base` files. Success = **Lua behavior matches `--- out`**, not that source equals `--- ref_lua`.
+OpenResty-style `Test::Base` files. Success = **Lua behavior matches `--- out`**, or compiler output matches `--- err`. Matching `--- ref_lua` source is not the criterion.
 
 | Section | Meaning |
 |---------|---------|
@@ -167,7 +167,8 @@ OpenResty-style `Test::Base` files. Success = **Lua behavior matches `--- out`**
 | `data` | JSON OPA/Rego **data** (often `{}`) |
 | `Rego` | Policy source (OPA produces IR from this; human-readable fixture) |
 | `ref_lua` | Hand reference Lua — **bootstrap** until IR→Lua works (may omit unused `data`; generated code must not) |
-| `out` | Expected `{ rule_name: value, ... }` |
+| `out` | Expected `{ rule_name: value, ... }` (eval cases; mutually exclusive with `err`) |
+| `err` | Substring of `rego2lua` stderr for compile-fail cases (`opa check --strict`); no eval |
 | `ONLY` | Test::Base: run only this block; harness prints Lua and dumps `tmp/{policy.lua,input.json,data.json,plan.json,run.sh}` |
 
 Notes:
@@ -178,10 +179,11 @@ Notes:
 
 ### What the harness does today
 
-1. If `./rego2lua` (or `$REGO2LUA`) exists: produce Lua from the policy (intended: Rego→OPA IR→Lua).
-2. Else: use `--- ref_lua` (bootstrap).
-3. Run under **LuaJIT** via `t/eval_pkg.lua` with `input` / `data`.
-4. Deep-compare result to `--- out`.
+1. If `--- err` is set: run `./rego2lua` and require a non-zero exit whose output contains `opa check failed` and the `--- err` substring. Skip when `rego2lua` is missing (no `ref_lua` fallback).
+2. Else if `./rego2lua` (or `$REGO2LUA`) exists: produce Lua from the policy (intended: Rego→OPA IR→Lua).
+3. Else: use `--- ref_lua` (bootstrap).
+4. Run under **LuaJIT** via `t/eval_pkg.lua` with `input` / `data`.
+5. Deep-compare result to `--- out`.
 
 ### Run
 
@@ -201,6 +203,7 @@ Needs: `luajit`, `lua-cjson`, `opa` (for IR generation), Perl `Test::Base` (`lib
 | File | Covers |
 |------|--------|
 | `runtime.t` | `runtime/` unit tests via facade (UNDEF, compare, types, numbers) |
+| `opa_check.t` | `opa check --strict` compile failures (`--- err`) |
 | `sanity.t` | `default`, field compare, AND, local `:=` |
 | `not.t` | `not` (`NotStmt`) |
 | `scalars.t` | string, number, boolean, null |

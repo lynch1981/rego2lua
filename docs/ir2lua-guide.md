@@ -51,7 +51,8 @@ Repo harness view (`./rego2lua` runs both Python stages):
 ```text
                     ┌─────────────────────────────────────┐
   example.rego      │  opa_plan.py                        │
-  ─────────────►    │  opa build -t plan → plan.json      │
+  ─────────────►    │  opa check --strict                 │
+                    │  opa build -t plan → plan.json      │
                     └─────────────────────────────────────┘
                                       │
                                       ▼
@@ -502,12 +503,13 @@ Bootstrap order (same as `./go`):
 | Order | Suite | Why |
 |-------|--------|-----|
 | 0 | `runtime.t` | Unit tests for `runtime/` (loads facade `rego_rt.lua`) |
-| 1 | `sanity.t` | default, `==`, AND, `:=` |
-| 2 | `not.t` | `not` / `NotStmt` |
-| 3 | `scalars.t` | null / bool / number / string |
-| 4 | `access.t` | `DotStmt`, indexing |
-| 5 | `membership.t` | `ScanStmt` / `in` |
-| 6 | `cmp_*.t` | compare stmts |
+| 1 | `opa_check.t` | `opa check --strict` compile failures (`--- err`) |
+| 2 | `sanity.t` | default, `==`, AND, `:=` |
+| 3 | `not.t` | `not` / `NotStmt` |
+| 4 | `scalars.t` | null / bool / number / string |
+| 5 | `access.t` | `DotStmt`, indexing |
+| 6 | `membership.t` | `ScanStmt` / `in` |
+| 7 | `cmp_*.t` | compare stmts |
 
 The harness uses `./rego2lua` when present and falls back to `--- ref_lua` otherwise.
 
@@ -561,7 +563,7 @@ Repo-root scripts plus the `ir2lua` package. There is no `load.py` dataclass lay
 ```text
 VERSION                   # public version (same as ir2lua.__version__)
 rego2lua                  # CLI: policy.rego → Lua on stdout
-opa_plan.py               # opa build -t plan → (plan dict, package)
+opa_plan.py               # opa check --strict; opa build -t plan → (plan dict, package)
 ir2lua/
   __init__.py             # __version__
   operands.py             # operand → Lua expr; TranslateError

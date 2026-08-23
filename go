@@ -2,6 +2,7 @@
 # Runtime helpers first, then policy fixtures (sanity → features → compares).
 prove -j "$(nproc)" \
   t/runtime.t \
+  t/opa_check.t \
   t/sanity.t \
   t/not.t \
   t/scalars.t \

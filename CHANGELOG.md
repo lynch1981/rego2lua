@@ -11,6 +11,7 @@ Pre-releases use a SemVer suffix (`-dev`). See [`docs/releasing.md`](docs/releas
 
 - CLI `--dump-plan` / `-d FILE` writes the OPA plan IR JSON before codegen.
 - Generate-time error when CallStmt names a builtin the runtime does not implement.
+- `opa check --strict` runs before `opa build -t plan` so invalid or unused-local/import Rego fails without a plan bundle.
 
 ### Fixed
 
@@ -19,6 +20,7 @@ Pre-releases use a SemVer suffix (`-dev`). See [`docs/releasing.md`](docs/releas
 ### Tests
 
 - [`./ci`](ci) now includes `t/access.t`.
+- [`t/opa_check.t`](t/opa_check.t) covers `opa check --strict` (unused local/import/argument, parse, type) via `--- err`.
 
 ## [0.0.1] — 2026-08-22
 
