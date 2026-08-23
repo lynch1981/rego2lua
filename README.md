@@ -16,7 +16,7 @@ Backend plan: [`docs/ir2lua-guide.md`](docs/ir2lua-guide.md). Agent notes: [`AGE
 
 **Developer preview.** Tag [`v0.0.1`](https://github.com/lynch1981/rego2lua/releases/tag/v0.0.1). Changelog: [`CHANGELOG.md`](CHANGELOG.md). License: [BSD-2-Clause](LICENSE).
 
-Works today: `package`, `default`, `input.field == …`, implicit AND, `local :=`, nested object and array index, `not`, `!=` / order compares, scalars (string / number / boolean / null). Required bar [`./ci`](ci): `t/runtime.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/access.t`, `t/cmp_*.t`. Still failing: `in` / `some` (`t/membership.t`). `./go` is **not** green.
+Works today: `package`, `default`, `input.field == …`, implicit AND, `local :=`, nested object and array index, `not`, `!=` / order compares, scalars (string / number / boolean / null). Required bar [`./ci`](ci): `t/runtime.t`, `t/opa_check.t`, `t/sanity.t`, `t/not.t`, `t/scalars.t`, `t/access.t`, `t/cmp_*.t`. Still failing: `in` / `some` (`t/membership.t`). `./go` is **not** green.
 
 Generated Lua loads `runtime/rego_rt.lua` with a CWD-relative `loadfile`. Evaluate from the **repo root**.
 
@@ -83,7 +83,8 @@ Regression tests use OpenResty-style Perl `Test::Base` files. Each file ends wit
 | `data` | yes* | JSON **data** document. This is OPA/Rego `data` — shared base facts the policy may read. Use `{}` when unused. |
 | `Rego` | **yes** | Full Rego policy source. This is the **compiler input** for `rego2lua`. |
 | `ref_lua` | bootstrap | Hand-written **reference Lua** that implements the same policy. Used only when `rego2lua` is not built yet, so tests can still check behavior. Not the primary success criterion. Generated modules must use `rule(input, data)`; bootstrap refs may omit `data` if unused (the harness still passes both). |
-| `out` | **yes** | Expected evaluation result as JSON. Keys are **rule names**, values are rule results (e.g. `{ "allow": false }`). |
+| `out` | eval cases | Expected evaluation result as JSON. Keys are **rule names**, values are rule results (e.g. `{ "allow": false }`). Mutually exclusive with `err`. |
+| `err` | compile-fail | Substring of `rego2lua` output. Expect a non-zero exit from `opa check --strict` (no Lua eval). Mutually exclusive with `out`. |
 | `ONLY` | debug | **Test::Base** built-in: run only this block. The harness **prints the Lua under test** and writes `tmp/{policy.lua,input.json,data.json,plan.json,run.sh}` so you can re-eval with `./tmp/run.sh`. Remove before commit. |
 
 \* If `input` or `data` is omitted or empty, the harness treats it as `{}`.
@@ -94,11 +95,17 @@ Stderr shows the generated (or reference) Lua. The harness also dumps the module
 
 ### How a case is judged
 
+Each case has `--- out` **or** `--- err`, not both.
+
+**Eval (`--- out`):**
+
 1. Compile `Rego` with `./rego2lua` when present; otherwise use `ref_lua`.
 2. Run the module under **LuaJIT**, calling each rule with `(input, data)`.
 3. Compare the result to `out` (deep equality).
 
 Success is matching `out`, not matching `ref_lua` source text.
+
+**Compile-fail (`--- err`):** run `./rego2lua` and require a non-zero exit whose output contains `opa check failed` and the `--- err` substring. Used by [`t/opa_check.t`](t/opa_check.t) for `opa check --strict`.
 
 **Module API:** every rule is `function <pkg>.<rule>(input, data)` and returns the rule value. The product/generated shape always takes both arguments. Bootstrap `ref_lua` may declare only `input` when `data` is unused — Lua ignores the extra argument the harness still passes.
 
