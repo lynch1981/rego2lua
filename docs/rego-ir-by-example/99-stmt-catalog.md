@@ -80,18 +80,19 @@ Lua sketches in this tree are IR-shaped. Product codegen must follow [`runtime/R
 
 ## Must-implement checklist (Lua backend v1)
 
-- [ ] CallStmt (planned funcs + builtins)
-- [ ] ReturnLocalStmt / ResultSetAddStmt
-- [ ] AssignVar / AssignVarOnce / ResetLocal
-- [ ] Dot / Equal / NotEqual
-- [ ] IsDefined / IsUndefined
-- [ ] MakeObject / ObjectInsert
-- [ ] ScanStmt
-- [ ] MakeArray / ArrayAppend
-- [ ] NotStmt / BlockStmt
-- [ ] frames: input/data args, dynamic `L` table
+- [x] CallStmt (planned funcs + builtins)
+- [x] ReturnLocalStmt
+- [ ] ResultSetAddStmt (unused: codegen wraps funcs, not plan result sets)
+- [x] AssignVar / AssignVarOnce / ResetLocal
+- [x] Dot / Equal / NotEqual
+- [x] IsDefined / IsUndefined
+- [ ] MakeObject / ObjectInsert (unused: same as ResultSetAdd)
+- [x] ScanStmt
+- [x] MakeArray / ArrayAppend
+- [x] NotStmt / BlockStmt
+- [x] frames: input/data args, `t0`/`t1` plus `tN` slots
 
-Then: ObjectMerge, sets, With, Len/IsArray, number makes.
+Then: ObjectMerge, sets, With, Len/IsArray. MakeNumberInt / MakeNumberRef / MakeNull are already emitted.
 
 ---
 

@@ -509,7 +509,7 @@ Bootstrap order (same as `./go`):
 | 5 | `membership.t` | `ScanStmt` / `in` |
 | 6 | `cmp_*.t` | compare stmts |
 
-Until the binary exists, `t::Rego` still falls back to `--- ref_lua`.
+The harness uses `./rego2lua` when present and falls back to `--- ref_lua` otherwise.
 
 ---
 
@@ -554,25 +554,41 @@ Later slices and runtime-vs-contract notes: [`runtime/README.md`](../runtime/REA
 
 ---
 
-## 9. Suggested Python layout
+## 9. Python layout
+
+Repo-root scripts plus the `ir2lua` package. There is no `load.py` dataclass layer, no `runtime_lua.py` blob, and no `ir2lua.cli` — the walker uses plan JSON dicts, and helpers live in [`runtime/`](../runtime/).
 
 ```text
-rego2lua/                 # or ir2lua/
-  __init__.py
-  load.py                 # json → Policy dataclasses
-  operands.py             # operand → Lua expr
-  stmts/                  # parse.py dispatcher; one module per stmt family
-  translate.py            # recursive driver
-  runtime_lua.py          # string blob of helpers
-  cli.py                  # plan.json → out.lua
+VERSION                   # public version (same as ir2lua.__version__)
+rego2lua                  # CLI: policy.rego → Lua on stdout
+opa_plan.py               # opa build -t plan → (plan dict, package)
+ir2lua/
+  __init__.py             # __version__
+  operands.py             # operand → Lua expr; TranslateError
+  translate.py            # funcs → blocks → stmts → module string
+  stmts/
+    parse.py              # IR type → handler
+    ctx.py                # Emit / Lowered protocols
+    assign.py             # ResetLocal, AssignVar, AssignVarOnce
+    defined.py            # IsDefined, IsUndefined
+    dot.py                # DotStmt
+    equal.py              # Equal, NotEqual
+    call.py               # CallStmt (planned funcs + builtin allowlist)
+    return_local.py       # ReturnLocalStmt
+    make.py               # MakeNull / MakeNumber* / MakeArray / ArrayAppend
+    not_stmt.py           # NotStmt
+    block.py              # BlockStmt
+    scan.py               # ScanStmt
+runtime/                  # LuaJIT helpers (not Python)
+  rego_rt.lua             # facade; generated modules load this
 ```
-
-CLI sketch (historical). Actual paths: `./rego2lua` (CLI), `opa_plan.py` (Rego→IR), `ir2lua/` (IR→Lua).
 
 ```bash
-python -m rego2lua compile plan.json -o policy.lua
-# later: rego2lua foo.rego -e foo/allow -o foo.lua  (shells out to opa)
+./rego2lua path/to/policy.rego > policy.lua
+./rego2lua -d plan.json path/to/policy.rego > policy.lua
 ```
+
+`opa_plan.build_ir_plan` takes the package path as the OPA entrypoint (`package foo.bar` → `-e foo/bar`). Codegen contract for what generated Lua may call: [`runtime/README.md`](../runtime/README.md#codegen-contract).
 
 ---
 
@@ -642,11 +658,13 @@ These ranks are **IR statement order** for codegen (unlock `t/*.t`). They are **
 
 ## 14. Checklist
 
-- [x] Minimal runtime (slice **1.1.1**): `runtime/` layers + `t/runtime.t`  
-- [ ] Generate `plan.json` for `example.rego` / a `sanity` policy  
-- [ ] Load IR in Python; print plan names and stmt type histogram  
-- [ ] Hand-trace the §4 plan + func locals once  
-- [ ] Implement **must** IR statements (codegen) on top of the runtime  
-- [ ] Emit `package` module API matching product shape  
-- [ ] Green: first case of `t/sanity.t` via IR path  
-- [ ] Grow statement coverage until `./go` is IR-backed  
+- [x] Minimal runtime (slice **1.1.1**): `runtime/` layers + `t/runtime.t`
+- [x] Generate `plan.json` (`opa_plan.py` / `./rego2lua -d FILE`)
+- [x] Load IR in Python (`ir2lua.translate` walks funcs → blocks → stmts)
+- [x] Hand-trace the §4 plan + func locals ([`rego-ir-by-example/01-spine-allow.md`](./rego-ir-by-example/01-spine-allow.md))
+- [x] Implement **must** IR statements for compiled funcs (codegen on `runtime/`)
+- [x] Emit `package` module API matching product shape (`pkg.rule(input, data)`)
+- [x] Green: `t/sanity.t` via IR path
+- [ ] Grow statement coverage until `./go` is IR-backed (`t/membership.t`: `in` / `internal.member_2`)
+
+Codegen wraps **funcs** as `pkg.rule(input, data)`, so `MakeObjectStmt` / `ObjectInsertStmt` / `ResultSetAddStmt` (plan result-set packing in §11) are unused. 
