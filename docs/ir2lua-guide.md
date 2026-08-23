@@ -554,25 +554,41 @@ Later slices and runtime-vs-contract notes: [`runtime/README.md`](../runtime/REA
 
 ---
 
-## 9. Suggested Python layout
+## 9. Python layout
+
+Repo-root scripts plus the `ir2lua` package. There is no `load.py` dataclass layer, no `runtime_lua.py` blob, and no `ir2lua.cli` — the walker uses plan JSON dicts, and helpers live in [`runtime/`](../runtime/).
 
 ```text
-rego2lua/                 # or ir2lua/
-  __init__.py
-  load.py                 # json → Policy dataclasses
-  operands.py             # operand → Lua expr
-  stmts/                  # parse.py dispatcher; one module per stmt family
-  translate.py            # recursive driver
-  runtime_lua.py          # string blob of helpers
-  cli.py                  # plan.json → out.lua
+VERSION                   # public version (same as ir2lua.__version__)
+rego2lua                  # CLI: policy.rego → Lua on stdout
+opa_plan.py               # opa build -t plan → (plan dict, package)
+ir2lua/
+  __init__.py             # __version__
+  operands.py             # operand → Lua expr; TranslateError
+  translate.py            # funcs → blocks → stmts → module string
+  stmts/
+    parse.py              # IR type → handler
+    ctx.py                # Emit / Lowered protocols
+    assign.py             # ResetLocal, AssignVar, AssignVarOnce
+    defined.py            # IsDefined, IsUndefined
+    dot.py                # DotStmt
+    equal.py              # Equal, NotEqual
+    call.py               # CallStmt (planned funcs + builtin allowlist)
+    return_local.py       # ReturnLocalStmt
+    make.py               # MakeNull / MakeNumber* / MakeArray / ArrayAppend
+    not_stmt.py           # NotStmt
+    block.py              # BlockStmt
+    scan.py               # ScanStmt
+runtime/                  # LuaJIT helpers (not Python)
+  rego_rt.lua             # facade; generated modules load this
 ```
-
-CLI sketch (historical). Actual paths: `./rego2lua` (CLI), `opa_plan.py` (Rego→IR), `ir2lua/` (IR→Lua).
 
 ```bash
-python -m rego2lua compile plan.json -o policy.lua
-# later: rego2lua foo.rego -e foo/allow -o foo.lua  (shells out to opa)
+./rego2lua path/to/policy.rego > policy.lua
+./rego2lua -d plan.json path/to/policy.rego > policy.lua
 ```
+
+`opa_plan.build_ir_plan` takes the package path as the OPA entrypoint (`package foo.bar` → `-e foo/bar`). Codegen contract for what generated Lua may call: [`runtime/README.md`](../runtime/README.md#codegen-contract).
 
 ---
 
