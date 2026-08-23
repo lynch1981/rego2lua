@@ -2,16 +2,57 @@
 
 # Copyright (c) 2026, Lei Meng
 
-"""Harness entry: ./rego2lua policy.rego → Lua on stdout."""
+"""CLI: policy.rego → Lua on stdout (Rego → IR → Lua)."""
 
+from __future__ import annotations
+
+import argparse
 import os
 import sys
+from pathlib import Path
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from ir2lua.cli import main
+from ir2lua import __version__
+from ir2lua.translate import TranslateError, translate_plan
+from opa_plan import OpaError, build_ir_plan
+
+
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        prog="rego2lua",
+        usage="rego2lua [-d FILE] <policy.rego>",
+        description="Compile a Rego policy to Lua via OPA plan IR.",
+    )
+    p.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"rego2lua {__version__}",
+    )
+    p.add_argument("-d", "--dump-plan", metavar="FILE")
+    p.add_argument("policy", metavar="policy.rego")
+    return p.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
+    if not Path(args.policy).is_file():
+        sys.stderr.write(f"rego2lua: not a file: {args.policy}\n")
+        return 2
+    try:
+        plan, package = build_ir_plan(args.policy, dump_plan=args.dump_plan)
+        lua = translate_plan(plan, package)
+    except (OpaError, TranslateError, OSError) as e:
+        sys.stderr.write(f"rego2lua: {e}\n")
+        return 1
+    sys.stdout.write(lua)
+    if not lua.endswith("\n"):
+        sys.stdout.write("\n")
+    return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
