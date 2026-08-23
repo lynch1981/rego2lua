@@ -7,6 +7,10 @@ Pre-releases use a SemVer suffix (`-dev`). See [`docs/releasing.md`](docs/releas
 
 ## Unreleased
 
+### Added
+
+- CLI `--dump-plan` / `-d FILE` writes the OPA plan IR JSON before codegen.
+
 ### Fixed
 
 - Array index via `rt.dot` is Rego 0-based (`input.roles[0]` is the first element).

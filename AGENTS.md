@@ -165,7 +165,7 @@ OpenResty-style `Test::Base` files. Success = **Lua behavior matches `--- out`**
 | `Rego` | Policy source (OPA produces IR from this; human-readable fixture) |
 | `ref_lua` | Hand reference Lua — **bootstrap** until IR→Lua works (may omit unused `data`; generated code must not) |
 | `out` | Expected `{ rule_name: value, ... }` |
-| `ONLY` | Test::Base: run only this block; harness prints Lua and dumps `tmp/{policy.lua,input.json,data.json,run.sh}` |
+| `ONLY` | Test::Base: run only this block; harness prints Lua and dumps `tmp/{policy.lua,input.json,data.json,plan.json,run.sh}` |
 
 Notes:
 

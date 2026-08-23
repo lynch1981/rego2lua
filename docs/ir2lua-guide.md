@@ -76,6 +76,12 @@ opa build -t plan -e example/allow example.rego -o bundle.tar.gz
 tar -xzf bundle.tar.gz   # extracts plan.json (and related files)
 ```
 
+In-tree shortcut (same IR the translator uses):
+
+```bash
+./rego2lua -d plan.json example.rego >/dev/null
+```
+
 - `-t plan` — emit the **plan IR** (not Wasm).
 - `-e <path>` — entrypoint exposed as a plan (e.g. `data.foo.allow` path form `foo/allow` depending on package).
 
@@ -577,7 +583,7 @@ python -m rego2lua compile plan.json -o policy.lua
 3. Keep runtime as **facade + layers** under `runtime/` (see `runtime/README.md`); public load path stays `rego_rt.lua`.  
 4. Prefer correctness over pretty Lua until `sanity.t` is green on IR path.  
 5. Log IR `type` on unknown statements; fail closed.  
-6. Use `--- ONLY` in `.t` files when debugging: stderr dumps Lua; `tmp/` gets `policy.lua`, `input.json`, `data.json`, and `run.sh`.  
+6. Use `--- ONLY` in `.t` files when debugging: stderr dumps Lua; `tmp/` gets `policy.lua`, `input.json`, `data.json`, `plan.json`, and `run.sh`.  
 7. Walk the §4 example end-to-end once by hand (plan + func locals) before automating.
 
 ---
