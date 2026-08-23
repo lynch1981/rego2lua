@@ -46,17 +46,17 @@ Rego  --opa build -t plan-->  plan.json (IR)
                               rule value  e.g. true / false
 ```
 
-Repo harness view:
+Repo harness view (`./rego2lua` runs both Python stages):
 
 ```text
                     ┌─────────────────────────────────────┐
-  example.rego      │  opa build -t plan -e <entry> ...   │
-  ─────────────►    │  → plan.json (+ optional bundle)    │
+  example.rego      │  opa_plan.py                        │
+  ─────────────►    │  opa build -t plan → plan.json      │
                     └─────────────────────────────────────┘
                                       │
                                       ▼
                     ┌─────────────────────────────────────┐
-  plan.json         │  rego2lua / ir2lua (Python)         │
+  plan.json         │  ir2lua/ (translate.py + stmts/)    │
   ─────────────►    │  walk IR → Lua source string        │
                     └─────────────────────────────────────┘
                                       │
@@ -69,7 +69,7 @@ Repo harness view:
 
 ### Produce IR with OPA
 
-OPA must be on `PATH` (`opa version`). There is no in-repo `opa/` wrapper.
+OPA must be on `PATH` (`opa version`). This repo wraps that as [`opa_plan.py`](../opa_plan.py).
 
 ```bash
 opa build -t plan -e example/allow example.rego -o bundle.tar.gz
@@ -567,7 +567,7 @@ rego2lua/                 # or ir2lua/
   cli.py                  # plan.json → out.lua
 ```
 
-CLI sketch:
+CLI sketch (historical). Actual paths: `./rego2lua` (CLI), `opa_plan.py` (Rego→IR), `ir2lua/` (IR→Lua).
 
 ```bash
 python -m rego2lua compile plan.json -o policy.lua
