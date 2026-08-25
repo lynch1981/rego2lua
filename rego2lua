@@ -2,12 +2,13 @@
 
 # Copyright (c) 2026, Lei Meng
 
-"""CLI: policy.rego → Lua on stdout (Rego → IR → Lua)."""
+"""CLI: policy.rego → Lua on stdout (check --strict, then IR → Lua)."""
 
 from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -37,12 +38,28 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
+def check_rego(rego_path: str) -> None:
+    """Parse and compile ``rego_path`` with ``opa check --strict``."""
+    try:
+        proc = subprocess.run(
+            ["opa", "check", "--strict", rego_path],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as e:
+        raise OpaError("opa not found on PATH") from e
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "").strip()
+        raise OpaError(f"opa check failed (exit {proc.returncode}): {detail}")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     if not Path(args.policy).is_file():
         sys.stderr.write(f"rego2lua: not a file: {args.policy}\n")
         return 2
     try:
+        check_rego(args.policy)
         plan, package = build_ir_plan(args.policy, dump_plan=args.dump_plan)
         lua = translate_plan(plan, package)
     except (OpaError, TranslateError, OSError) as e:

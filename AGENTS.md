@@ -138,8 +138,8 @@ Prefer this **AOT / named-local** style over IR register dumps (`L[i]` + `goto`)
 | Path | Role |
 |------|------|
 | `VERSION` | Public version string (same as `ir2lua.__version__`) |
-| `./rego2lua` | CLI: Rego → IR → Lua |
-| `opa_plan.py` | Rego → IR (`opa check --strict`, then `opa build -t plan`) |
+| `./rego2lua` | CLI: `opa check --strict`, then IR → Lua |
+| `opa_plan.py` | Rego → IR (`opa build -t plan`) |
 | `ir2lua/` | IR → Lua |
 | `docs/ir2lua-guide.md` | **Main** implementation plan (IR → Lua); §8 = runtime |
 | `docs/releasing.md` | Tags, SemVer, GitHub pre-releases, CI |
