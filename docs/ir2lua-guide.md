@@ -50,7 +50,7 @@ Repo harness view (`./rego2lua` runs both Python stages):
 
 ```text
                     ┌─────────────────────────────────────┐
-  example.rego      │  opa_plan.py                        │
+  example.rego      │  ./rego2lua                         │
   ─────────────►    │  opa check --strict                 │
                     │  opa build -t plan → plan.json      │
                     └─────────────────────────────────────┘
@@ -562,8 +562,8 @@ Repo-root scripts plus the `ir2lua` package. There is no `load.py` dataclass lay
 
 ```text
 VERSION                   # public version (same as ir2lua.__version__)
-rego2lua                  # CLI: policy.rego → Lua on stdout
-opa_plan.py               # opa check --strict; opa build -t plan → (plan dict, package)
+rego2lua                  # CLI: opa check --strict, then IR → Lua on stdout
+opa_plan.py               # opa build -t plan → (plan dict, package)
 ir2lua/
   __init__.py             # __version__
   operands.py             # operand → Lua expr; TranslateError

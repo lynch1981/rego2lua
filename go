@@ -1,5 +1,6 @@
 #!/bin/sh
 # Runtime helpers first, then policy fixtures (sanity → features → compares).
+
 prove -j "$(nproc)" \
   t/runtime.t \
   t/opa_check.t \
