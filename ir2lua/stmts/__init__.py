@@ -4,5 +4,3 @@
 """IR statement handlers."""
 
 from ir2lua.stmts.parse import parse_stmt
-
-__all__ = ["parse_stmt"]

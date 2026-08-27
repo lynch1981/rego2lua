@@ -38,7 +38,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-def check_rego(rego_path: str) -> None:
+def _check_rego(rego_path: str) -> None:
     """Parse and compile ``rego_path`` with ``opa check --strict``."""
     try:
         proc = subprocess.run(
@@ -59,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.write(f"rego2lua: not a file: {args.policy}\n")
         return 2
     try:
-        check_rego(args.policy)
+        _check_rego(args.policy)
         plan, package = build_ir_plan(args.policy, dump_plan=args.dump_plan)
         lua = translate_plan(plan, package)
     except (OpaError, TranslateError, OSError) as e:

@@ -17,9 +17,6 @@ from ir2lua.operands import (
 )
 from ir2lua.stmts import parse_stmt
 
-# Re-export for the CLI.
-__all__ = ["TranslateError", "translate_plan"]
-
 
 def _rego_func_name(func: dict[str, Any]) -> str:
     name = func.get("name")
